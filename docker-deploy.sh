@@ -61,10 +61,40 @@ build_images() {
     print_message $GREEN "镜像构建完成"
 }
 
+# 检查镜像是否存在
+check_images() {
+    local missing_images=()
+    local services=("ai-detection" "backend" "admin-frontend" "monitor-frontend")
+    
+    for service in "${services[@]}"; do
+        local image_name="kangyang-demo-${service}"
+        if ! docker images -q "$image_name" | grep -q .; then
+            missing_images+=("$service")
+        fi
+    done
+    
+    if [ ${#missing_images[@]} -gt 0 ]; then
+        print_message $YELLOW "检测到以下服务缺少镜像: ${missing_images[*]}"
+        print_message $BLUE "正在构建缺少的镜像..."
+        
+        for service in "${missing_images[@]}"; do
+            print_message $YELLOW "构建 $service 镜像..."
+            $COMPOSE_CMD build "$service"
+        done
+        
+        print_message $GREEN "镜像构建完成"
+    else
+        print_message $GREEN "所有服务镜像已存在，跳过构建"
+    fi
+}
+
 # 启动服务
 start_services() {
     print_message $BLUE "启动康养系统服务..."
     create_directories
+    
+    # 检查并构建缺少的镜像
+    check_images
     
     # 启动基础服务（MySQL, Redis）
     print_message $YELLOW "启动基础服务..."
@@ -185,11 +215,12 @@ show_help() {
     echo "使用方法: $0 [命令] [选项]"
     echo
     echo "命令:"
-    echo "  start         启动所有服务"
+    echo "  start         启动所有服务（自动检测并构建缺少的镜像）"
     echo "  start-nginx   启动所有服务（包含Nginx）"
     echo "  stop          停止所有服务"
     echo "  restart       重启所有服务"
-    echo "  build         构建Docker镜像"
+    echo "  build         构建所有Docker镜像"
+    echo "  rebuild       强制重新构建所有镜像"
     echo "  logs [服务名] 查看日志"
     echo "  status        查看服务状态"
     echo "  health        健康检查"
@@ -221,6 +252,11 @@ main() {
             ;;
         "build")
             build_images
+            ;;
+        "rebuild")
+            print_message $BLUE "强制重新构建所有镜像..."
+            $COMPOSE_CMD build --no-cache
+            print_message $GREEN "镜像重新构建完成"
             ;;
         "logs")
             show_logs "$2"
