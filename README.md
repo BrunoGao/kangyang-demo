@@ -46,7 +46,8 @@
          │                       │                       │
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   AI检测服务     │    │     MySQL       │    │     Redis       │
-│  (Python)       │    │   数据存储       │    │   缓存/队列     │
+│  (Python 3.12)  │    │   数据存储       │    │   缓存/队列     │
+│  + 测试框架      │    │                 │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -54,9 +55,14 @@
 
 ```
 📦 kangyang-demo
-├── 🤖 ai-detection/              # AI检测服务 (Python)
+├── 🤖 ai-detection/              # AI检测服务 (Python 3.12)
 │   ├── app.py                   # 主应用
 │   ├── fall_detector.py         # 跌倒检测算法
+│   ├── test_framework.py        # 自动化测试框架
+│   ├── test_framework_web.py    # Web测试界面
+│   ├── video_resource_manager.py # 视频资源管理
+│   ├── start_test_platform.py   # 测试平台启动器
+│   ├── VIDEO_TESTING_GUIDE.md   # 完整测试指南
 │   ├── requirements.txt         # Python依赖
 │   └── Dockerfile              # Docker配置
 ├── 🚀 backend/                   # 后端API (Spring Boot)
@@ -122,11 +128,12 @@ docker compose -f docker-compose.dev.yml up -d
 - **WebSocket** - 实时通信
 
 ### AI算法
-- **Python 3.9** - 主要开发语言
+- **Python 3.12** - 主要开发语言 (最新优化版本)
 - **OpenCV** - 计算机视觉库
 - **MediaPipe** - 姿态检测
 - **YOLO** - 目标检测
 - **Flask** - 轻量级Web框架
+- **自动化测试框架** - 完整的AI模型测试和验证
 
 ### 前端技术
 - **Vue.js 3** - 渐进式前端框架
@@ -185,7 +192,43 @@ docker compose -f docker-compose.dev.yml up -d
 - **[📖 完整部署文档](DOCKER_DEPLOYMENT.md)** - 详细的部署和配置指南
 - **[🚀 快速启动指南](QUICK_START.md)** - 5分钟快速上手
 - **[⚙️ 项目配置说明](CLAUDE.md)** - 开发和配置参考
-- **[🎥 视频测试指南](video_test_guide.md)** - 功能测试说明
+- **[🎥 AI测试完整指南](ai-detection/VIDEO_TESTING_GUIDE.md)** - 视频测试和验证框架
+- **[🧪 自动化测试框架](ai-detection/test_framework.py)** - AI模型性能测试工具
+
+## 🧪 AI测试与验证
+
+### 🎯 自动化测试框架
+项目包含完整的AI模型测试和验证框架，支持：
+
+- **🎬 视频测试**: 支持跌倒检测、火焰检测、烟雾检测等多种场景
+- **📊 性能评估**: 自动生成准确率、召回率、F1分数等关键指标
+- **🌐 Web界面**: 提供直观的测试管理和结果可视化界面
+- **📈 批量测试**: 支持大规模测试数据集的自动化处理
+- **📋 详细报告**: 生成包含测试结果、性能指标和错误分析的完整报告
+
+### 🚀 快速开始测试
+
+```bash
+# 进入AI检测目录
+cd ai-detection
+
+# 启动Web测试平台
+python start_test_platform.py
+
+# 或直接运行命令行测试
+python test_framework.py
+
+# 访问Web界面
+open http://localhost:5558
+```
+
+### 📋 测试覆盖范围
+
+- **基础功能测试**: 跌倒检测准确性验证
+- **性能压力测试**: 多路视频流并发处理
+- **鲁棒性测试**: 低光照、复杂场景等极端条件
+- **误报率测试**: 正常活动的误判率控制
+- **实时性测试**: 检测延迟和响应时间评估
 
 ## 🤝 贡献指南
 
