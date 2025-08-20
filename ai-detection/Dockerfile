@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y \
 # 复制依赖文件
 COPY requirements.txt .
 
-# 安装Python依赖，使用国内镜像加速
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+# 安装Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 创建日志目录
 RUN mkdir -p /app/logs

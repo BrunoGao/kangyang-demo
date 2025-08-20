@@ -7,9 +7,9 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# 使用阿里云镜像加速构建
-RUN mvn -s /usr/share/maven/ref/settings-docker.xml dependency:resolve
-RUN mvn -s /usr/share/maven/ref/settings-docker.xml clean package -DskipTests
+# Maven构建
+RUN mvn dependency:resolve
+RUN mvn clean package -DskipTests
 
 # 运行时镜像
 FROM openjdk:11-jre-slim
