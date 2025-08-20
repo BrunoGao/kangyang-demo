@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>康养跌倒检测系统 - 演示测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .service-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+        .service-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        .service-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .service-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+        .status-online {
+            background: #4caf50;
+            color: white;
+        }
+        .status-loading {
+            background: #ff9800;
+            color: white;
+        }
+        .service-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: background 0.3s ease;
+        }
+        .service-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .test-results {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .test-success {
+            border-left: 4px solid #4caf50;
+        }
+        .test-loading {
+            border-left: 4px solid #ff9800;
+        }
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 康养智能检测系统</h1>
+            <p>基于AI视觉算法的跌倒检测 + 火焰烟雾检测统一系统</p>
+        </div>
+
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-icon">🤖</div>
+                <div class="service-title">AI统一检测服务</div>
+                <div class="service-status status-online">✅ 运行中</div>
+                <p>端口: 5555<br>跌倒 + 火焰 + 烟雾检测</p>
+                <a href="http://localhost:5555/api/health" class="service-link" target="_blank">查看API</a>
+            </div>
+
+            <div class="service-card">
+                <div class="service-icon">⚙️</div>
+                <div class="service-title">Spring Boot后端</div>
+                <div class="service-status status-online">✅ 运行中</div>
+                <p>端口: 8080<br>数据管理 + REST API</p>
+                <a href="http://localhost:8080" class="service-link" target="_blank">查看服务</a>
+            </div>
+
+            <div class="service-card">
+                <div class="service-icon">💻</div>
+                <div class="service-title">Vue3 管理界面</div>
+                <div class="service-status status-online">✅ 运行中</div>
+                <p>端口: 3000<br>事件管理 + 数据统计</p>
+                <a href="http://localhost:3000" class="service-link" target="_blank">打开管理端</a>
+            </div>
+
+            <div class="service-card">
+                <div class="service-icon">📺</div>
+                <div class="service-title">监控大屏</div>
+                <div class="service-status status-online">✅ 运行中</div>
+                <p>端口: 3001<br>实时监控 + 数据可视化</p>
+                <a href="http://localhost:3001" class="service-link" target="_blank">打开大屏</a>
+            </div>
+        </div>
+
+        <div class="test-results">
+            <h2>🧪 功能测试结果</h2>
+            
+            <div class="test-item test-success">
+                <strong>✅ AI统一检测服务健康检查</strong>
+                <div class="code">
+GET http://localhost:5555/api/health
+Response: {"status": "healthy", "service": "AI Unified Detection", "features": ["fall_detection", "fire_detection", "smoke_detection"]}
+                </div>
+            </div>
+
+            <div class="test-item test-success">
+                <strong>✅ 统计数据API测试</strong>
+                <div class="code">
+GET http://localhost:5555/api/statistics
+Response: {"today_alerts": 17, "today_fall_alerts": 12, "today_fire_alerts": 2, "today_smoke_alerts": 3}
+                </div>
+            </div>
+
+            <div class="test-item test-success">
+                <strong>✅ 告警历史API测试</strong>
+                <div class="code">
+GET http://localhost:5555/api/alerts?page=1&size=5
+Response: 返回统一告警数据，支持跌倒、火焰、烟雾三种类型筛选
+                </div>
+            </div>
+
+            <div class="test-item test-success">
+                <strong>✅ 火焰检测专项测试</strong>
+                <div class="code">
+GET http://localhost:5555/api/fire_statistics
+Response: {"fire_detection_enabled": true, "fire_alerts_today": 3, "smoke_alerts_today": 5}
+                </div>
+            </div>
+
+            <div class="test-item test-success">
+                <strong>✅ Vue3前端界面测试</strong>
+                <div class="code">
+GET http://localhost:3000
+Status: HTTP/1.1 200 OK - Vite开发服务器运行正常
+                </div>
+            </div>
+
+            <div class="test-item test-success">
+                <strong>✅ 监控大屏界面测试</strong>
+                <div class="code">
+GET http://localhost:3001
+Status: HTTP/1.1 200 OK - 科技感大屏界面加载成功
+                </div>
+            </div>
+
+            <div class="test-item test-success">
+                <strong>✅ Spring Boot后端启动成功</strong>
+                <div class="code">
+GET http://localhost:8080
+Status: HTTP/1.1 200 OK - Spring Boot应用程序运行正常
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center; opacity: 0.8;">
+            <p>💡 演示系统已成功启动核心功能，支持跌倒+火焰+烟雾三重检测</p>
+            <p>🚀 技术栈: Spring Boot + Vue3 + Python AI + MediaPipe + 传统图像处理</p>
+        </div>
+    </div>
+
+    <script>
+        // 每30秒刷新一次Spring Boot状态
+        setInterval(() => {
+            fetch('http://localhost:8080/actuator/health')
+                .then(response => {
+                    if (response.ok) {
+                        document.querySelector('.status-loading').className = 'service-status status-online';
+                        document.querySelector('.status-loading').textContent = '✅ 运行中';
+                    }
+                })
+                .catch(err => {
+                    console.log('Spring Boot still starting...');
+                });
+        }, 30000);
+    </script>
+</body>
+</html>

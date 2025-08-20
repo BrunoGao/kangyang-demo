@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: kangyang-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: kangyang
+      MYSQL_USER: kangyang
+      MYSQL_PASSWORD: kangyang123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - kangyang-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: kangyang-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - kangyang-network
+
+  ai-detection:
+    build: ./ai-detection
+    container_name: kangyang-ai
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ai-detection:/app
+    depends_on:
+      - redis
+    networks:
+      - kangyang-network
+
+  backend:
+    build: ./backend
+    container_name: kangyang-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/kangyang
+      SPRING_DATASOURCE_USERNAME: kangyang
+      SPRING_DATASOURCE_PASSWORD: kangyang123
+      SPRING_REDIS_HOST: redis
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - kangyang-network
+
+volumes:
+  mysql_data:
+
+networks:
+  kangyang-network:
+    driver: bridge

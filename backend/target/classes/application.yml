@@ -1,0 +1,58 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: kangyang-fall-detection
+
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/kangyang?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: kangyang
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: kangyang123
+
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+  # JSON配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+# 日志配置
+logging:
+  level:
+    com.kangyang: DEBUG
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# AI检测服务配置
+ai-service:
+  url: http://localhost:5000
+  timeout: 10000
+
+# 告警配置
+alert:
+  enabled: true
+  wechat:
+    enabled: false  # demo版本暂时关闭微信告警
+    webhook: ""

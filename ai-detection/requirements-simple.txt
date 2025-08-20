@@ -1,0 +1,7 @@
+flask==2.3.3
+opencv-python
+numpy
+mediapipe
+requests
+redis
+python-dotenv
