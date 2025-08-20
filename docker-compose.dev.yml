@@ -1,0 +1,131 @@
+version: '3.8'
+
+# 开发环境配置 - 支持热重载和调试
+services:
+  # 数据库服务 - 开发环境配置
+  mysql:
+    extends:
+      file: docker-compose.yml
+      service: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./backend/src/main/resources/data.sql:/docker-entrypoint-initdb.d/data.sql:ro
+
+  # Redis服务 - 开发环境配置
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+
+  # AI检测服务 - 开发模式（热重载）
+  ai-detection:
+    build: 
+      context: ./ai-detection
+      dockerfile: Dockerfile
+    container_name: kangyang-ai-dev
+    restart: "no"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      TZ: Asia/Shanghai
+    ports:
+      - "5000:5000"
+      - "5678:5678"  # 调试端口
+    volumes:
+      - ./ai-detection:/app
+      - ./videos:/app/videos:ro
+    command: python -m debugpy --listen 0.0.0.0:5678 --wait-for-client app.py
+    depends_on:
+      - redis
+    networks:
+      - kangyang-network
+
+  # Spring Boot后端 - 开发模式
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: kangyang-backend-dev
+    restart: "no"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/kangyang?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: kangyang
+      SPRING_DATASOURCE_PASSWORD: kangyang123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_DEVTOOLS_RESTART_ENABLED: true
+      SPRING_DEVTOOLS_LIVERELOAD_ENABLED: true
+      JAVA_OPTS: "-Xmx256m -Xms128m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000"
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+      - "8000:8000"   # 调试端口
+      - "35729:35729" # LiveReload端口
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/logs:/app/logs
+      - maven_cache:/root/.m2
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - kangyang-network
+
+  # 管理后台 - 开发模式（热重载）
+  admin-frontend-dev:
+    build:
+      context: ./frontend/admin
+      dockerfile: Dockerfile.dev
+    container_name: kangyang-admin-dev
+    restart: "no"
+    environment:
+      TZ: Asia/Shanghai
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/admin:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    networks:
+      - kangyang-network
+
+  # 监控大屏 - 开发模式（热重载）
+  monitor-frontend-dev:
+    build:
+      context: ./frontend/monitor
+      dockerfile: Dockerfile.dev
+    container_name: kangyang-monitor-dev
+    restart: "no"
+    environment:
+      TZ: Asia/Shanghai
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend/monitor:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    networks:
+      - kangyang-network
+
+volumes:
+  mysql_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  maven_cache:
+    driver: local
+
+networks:
+  kangyang-network:
+    driver: bridge
