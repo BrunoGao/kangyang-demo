@@ -267,12 +267,18 @@ def generate_fall_event():
     print(f"🚨 模拟跌倒事件: {event}")
     return event
 
+@app.route('/health', methods=['GET'])
+def health_simple():
+    """简单健康检查"""
+    return jsonify({'status': 'ok'})
+
 if __name__ == '__main__':
     print("🚀 启动AI统一检测服务 (演示模式)...")
     print("📍 API地址: http://localhost:5555")
     print("🔥 支持功能: 跌倒检测 + 火焰检测 + 烟雾检测")
     print("⚠️  注意: 当前运行在演示模式，使用模拟数据")
     print("\n📊 API接口:")
+    print("  - GET  /health - 健康检查")
     print("  - GET  /api/health - 健康检查")
     print("  - POST /api/process_frame - 图像检测")
     print("  - GET  /api/alerts - 告警历史")

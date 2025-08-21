@@ -1,7 +1,18 @@
-pyenv: python: command not found
+🚀 启动AI统一检测服务 (演示模式)...
+📍 API地址: http://localhost:5555
+🔥 支持功能: 跌倒检测 + 火焰检测 + 烟雾检测
+⚠️  注意: 当前运行在演示模式，使用模拟数据
 
-The `python' command exists in these Python versions:
-  3.10.10
+📊 API接口:
+  - GET  /health - 健康检查
+  - GET  /api/health - 健康检查
+  - POST /api/process_frame - 图像检测
+  - GET  /api/alerts - 告警历史
+  - GET  /api/statistics - 统计数据
+  - GET  /api/fire_statistics - 火焰检测统计
 
-Note: See 'pyenv help global' for tips on allowing both
-      python2 and python3 to be found.
+✅ 服务启动成功!
+ * Serving Flask app 'app_simple'
+ * Debug mode: off
+Address already in use
+Port 5555 is in use by another program. Either identify and stop that program, or start the server with a different port.

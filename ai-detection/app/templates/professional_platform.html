@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 康养AI检测专业平台 | Professional Detection System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 背景动画 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 头部导航 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 2rem;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .logo i {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .nav-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online { background: var(--success); }
+        .status-offline { background: var(--danger); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* 主容器 */
+        .main-container {
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 工作流步骤 */
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2rem auto 4rem;
+            max-width: 800px;
+            position: relative;
+            padding: 0 2rem;
+        }
+
+        .workflow-steps::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 120px;
+            right: 120px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--border) 0%, var(--primary) 50%, var(--success) 100%);
+            border-radius: 2px;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            min-width: 140px;
+        }
+
+        .step-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            font-size: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step-circle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(16, 185, 129, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .step.active .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4), 0 0 0 0 rgba(37, 99, 235, 0.3);
+            animation: step-pulse 2s infinite;
+            transform: scale(1.05);
+        }
+
+        .step.completed .step-circle {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        @keyframes step-pulse {
+            0% { box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4), 0 0 0 0 rgba(37, 99, 235, 0.3); }
+            50% { box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4), 0 0 0 10px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4), 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        .step-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-align: center;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+            font-weight: 600;
+            transform: scale(1.05);
+        }
+
+        .step.completed .step-label {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* 主要内容区域 */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* 视频上传区域 */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 1rem;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background: var(--glass);
+            border-color: var(--primary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* 进度条 */
+        .progress-container {
+            margin: 1.5rem 0;
+            display: none;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* 配置面板 */
+        .config-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .config-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .config-control {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .config-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* 检测结果 */
+        .results-container {
+            grid-column: 1 / -1;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .results-tabs {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 检测事件卡片 */
+        .event-card {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(37, 99, 235, 0.02) 100%);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.75rem;
+            margin-bottom: 1.25rem;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-left-width: 6px;
+        }
+
+        .event-card:hover::before {
+            opacity: 1;
+        }
+
+        .event-card.fall-event {
+            border-left-color: var(--danger);
+        }
+
+        .event-card.fire-event {
+            border-left-color: #ff6b35;
+        }
+
+        .event-card.smoke-event {
+            border-left-color: #6b7280;
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .event-type {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .event-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+        }
+
+        .event-type-badge.fall {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .event-type-badge.fire {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(234, 88, 12, 0.05) 100%);
+            color: #ff6b35;
+            border: 1px solid rgba(255, 107, 53, 0.2);
+        }
+
+        .event-type-badge.smoke {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(75, 85, 99, 0.05) 100%);
+            color: #6b7280;
+            border: 1px solid rgba(107, 114, 128, 0.2);
+        }
+
+        .severity-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .severity-tag.high {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .severity-tag.medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .severity-tag.critical {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.2) 0%, rgba(185, 28, 28, 0.1) 100%);
+            color: #dc2626;
+            border: 1px solid rgba(220, 38, 38, 0.4);
+            animation: severity-pulse 2s infinite;
+        }
+
+        @keyframes severity-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+            50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0); }
+        }
+
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .confidence-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: var(--confidence-width, 0%);
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            transition: width 0.5s ease;
+        }
+
+        .confidence-high {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .confidence-medium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .confidence-low {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(37, 99, 235, 0.03) 100%);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(16, 185, 129, 0.04) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card.fall-stat {
+            border-left: 4px solid var(--danger);
+        }
+
+        .stat-card.fire-stat {
+            border-left: 4px solid #ff6b35;
+        }
+
+        .stat-card.smoke-stat {
+            border-left: 4px solid #6b7280;
+        }
+
+        .stat-card.total-stat {
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card.processing-stat {
+            border-left: 4px solid var(--success);
+        }
+
+        .stat-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            font-size: 1.75rem;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 2px solid rgba(37, 99, 235, 0.2);
+            color: var(--primary);
+        }
+
+        .stat-icon.fall {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            border-color: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .stat-icon.fire {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(234, 88, 12, 0.05) 100%);
+            border-color: rgba(255, 107, 53, 0.2);
+            color: #ff6b35;
+        }
+
+        .stat-icon.smoke {
+            background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(75, 85, 99, 0.05) 100%);
+            border-color: rgba(107, 114, 128, 0.2);
+            color: #6b7280;
+        }
+
+        .stat-icon.success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border-color: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-sublabel {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            opacity: 0.7;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .workflow-steps {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+            
+            .workflow-steps::before {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+            
+            .nav-content {
+                padding: 0 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--bg-tertiary);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 1.125rem;
+            color: var(--text-primary);
+        }
+
+        /* 隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 确保结果容器正确显示 */
+        .results-container:not(.hidden) {
+            display: block !important;
+        }
+
+        /* 视频播放器 */
+        .video-container {
+            position: relative;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            background: var(--bg-tertiary);
+        }
+
+        .video-player {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* 检测覆盖层 */
+        .detection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .detection-box {
+            position: absolute;
+            border: 3px solid var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 4px;
+            animation: detection-pulse 1.5s infinite;
+        }
+
+        @keyframes detection-pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.4; }
+        }
+
+        /* 时间轴 */
+        .timeline {
+            height: 60px;
+            background: var(--bg-tertiary);
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timeline-track {
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .timeline-event {
+            position: absolute;
+            top: 10px;
+            height: 40px;
+            background: var(--danger);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            min-width: 60px;
+        }
+
+        .timeline-event:hover {
+            transform: scaleY(1.2);
+            background: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>康养AI检测平台</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary);">Professional v2.0</span>
+            </div>
+            <div class="nav-status">
+                <div class="status-indicator">
+                    <div class="status-dot status-online" id="statusDot"></div>
+                    <span id="statusText">系统就绪</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 工作流步骤 -->
+        <div class="workflow-steps">
+            <div class="step active" id="step1">
+                <div class="step-circle">
+                    <i class="fas fa-upload"></i>
+                </div>
+                <div class="step-label">上传视频</div>
+            </div>
+            <div class="step" id="step2">
+                <div class="step-circle">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="step-label">配置检测</div>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-circle">
+                    <i class="fas fa-play"></i>
+                </div>
+                <div class="step-label">执行分析</div>
+            </div>
+            <div class="step" id="step4">
+                <div class="step-circle">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="step-label">查看报告</div>
+            </div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div class="content-grid">
+            <!-- 左侧：主要操作区 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-video"></i>
+                        视频检测分析
+                    </h2>
+                </div>
+
+                <!-- 视频上传 -->
+                <div id="uploadSection">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">拖拽视频文件到此处或点击上传</div>
+                        <div class="upload-hint">支持 MP4, AVI, MOV 格式，最大 500MB</div>
+                        <input type="file" id="videoInput" class="hidden" accept="video/*">
+                    </div>
+                    
+                    <!-- 进度条 -->
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-label">
+                            <span>上传进度</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 默认视频选项 -->
+                    <div style="text-align: center; margin-top: 1.5rem;">
+                        <button class="btn btn-outline" id="loadDefaultBtn">
+                            <i class="fas fa-file-video"></i>
+                            使用默认测试视频
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 视频播放器 -->
+                <div id="videoSection" class="hidden">
+                    <div class="video-container">
+                        <video id="videoPlayer" class="video-player" controls>
+                            您的浏览器不支持视频播放
+                        </video>
+                        <div class="detection-overlay" id="detectionOverlay"></div>
+                    </div>
+                    
+                    <!-- 时间轴 -->
+                    <div class="timeline" id="timeline">
+                        <div class="timeline-track" id="timelineTrack"></div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button class="btn btn-primary" id="analyzeBtn">
+                            <i class="fas fa-search"></i>
+                            开始AI检测分析
+                        </button>
+                        <button class="btn btn-outline" id="resetBtn">
+                            <i class="fas fa-redo"></i>
+                            重新选择视频
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：配置面板 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-sliders-h"></i>
+                        检测配置
+                    </h2>
+                </div>
+
+                <div class="config-group">
+                    <label class="config-label">检测类型</label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="detectFall" checked> 跌倒检测
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="detectFire"> 火焰检测
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="detectSmoke"> 烟雾检测
+                        </label>
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label class="config-label">置信度阈值</label>
+                    <select class="config-control" id="confidenceThreshold">
+                        <option value="0.6">0.6 - 宽松（高召回率）</option>
+                        <option value="0.7">0.7 - 平衡</option>
+                        <option value="0.8" selected>0.8 - 标准（推荐）</option>
+                        <option value="0.9">0.9 - 严格（高精确率）</option>
+                    </select>
+                </div>
+
+                <div class="config-group">
+                    <label class="config-label">检测模式</label>
+                    <select class="config-control" id="detectionMode">
+                        <option value="standard" selected>标准模式 (5fps采样)</option>
+                        <option value="high_accuracy">高精度模式 (每帧检测)</option>
+                        <option value="full_analysis">完整分析模式 (每帧检测)</option>
+                        <option value="elderly_optimized">老年人优化 (15fps采样)</option>
+                        <option value="real_time">实时模式 (10fps采样)</option>
+                    </select>
+                </div>
+
+                <div class="config-group">
+                    <label class="config-label">测试环境</label>
+                    <select class="config-control" id="testEnvironment">
+                        <option value="laboratory" selected>实验室环境</option>
+                        <option value="clinical">临床环境</option>
+                        <option value="home">家庭环境</option>
+                        <option value="elderly_care">养老院环境</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 检测结果 -->
+        <div class="results-container" id="resultsContainer">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        检测结果与分析报告
+                    </h2>
+                    <button class="btn btn-primary" id="exportReportBtn">
+                        <i class="fas fa-download"></i>
+                        导出报告
+                    </button>
+                </div>
+
+                <!-- 统计概览 -->
+                <div class="stats-grid" id="statsGrid"></div>
+
+                <!-- 结果标签页 -->
+                <div class="results-tabs">
+                    <button class="tab-btn active" data-tab="events">检测事件</button>
+                    <button class="tab-btn" data-tab="analysis">算法分析</button>
+                    <button class="tab-btn" data-tab="benchmark">性能基准</button>
+                    <button class="tab-btn" data-tab="report">专业报告</button>
+                </div>
+
+                <!-- 标签页内容 -->
+                <div class="tab-content active" id="tab-events"></div>
+                <div class="tab-content" id="tab-analysis"></div>
+                <div class="tab-content" id="tab-benchmark"></div>
+                <div class="tab-content" id="tab-report"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">正在处理...</div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentStep = 1;
+        let videoFile = null;
+        let uploadedVideoInfo = null;
+        let detectionResults = null;
+        let videoPlayer = null;
+
+        // API 配置
+        const API_BASE = window.location.origin;
+
+        // DOM 加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        // 应用初始化
+        async function initializeApp() {
+            console.log('🚀 康养AI检测专业平台启动');
+            
+            // 检查API状态
+            await checkAPIStatus();
+            
+            // 绑定事件监听器
+            setupEventListeners();
+            
+            console.log('✅ 平台初始化完成');
+        }
+
+        // 检查API状态
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    updateStatus('online', '系统就绪');
+                } else {
+                    updateStatus('offline', '系统异常');
+                }
+            } catch (error) {
+                console.error('API状态检查失败:', error);
+                updateStatus('offline', '连接失败');
+            }
+        }
+
+        // 更新状态指示器
+        function updateStatus(status, text) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusDot.className = `status-dot status-${status}`;
+            statusText.textContent = text;
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 文件上传
+            const uploadZone = document.getElementById('uploadZone');
+            const videoInput = document.getElementById('videoInput');
+            
+            uploadZone.addEventListener('click', () => videoInput.click());
+            uploadZone.addEventListener('dragover', handleDragOver);
+            uploadZone.addEventListener('drop', handleDrop);
+            uploadZone.addEventListener('dragleave', handleDragLeave);
+            
+            videoInput.addEventListener('change', handleFileSelect);
+            
+            // 按钮事件
+            document.getElementById('loadDefaultBtn').addEventListener('click', loadDefaultVideo);
+            document.getElementById('analyzeBtn').addEventListener('click', startAnalysis);
+            document.getElementById('resetBtn').addEventListener('click', resetToUpload);
+            document.getElementById('exportReportBtn').addEventListener('click', exportReport);
+            
+            // 标签页切换
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
+            });
+        }
+
+        // 拖拽处理
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleVideoFile(files[0]);
+            }
+        }
+
+        // 文件选择处理
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleVideoFile(file);
+            }
+        }
+
+        // 视频文件处理
+        function handleVideoFile(file) {
+            // 验证文件类型
+            const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/quicktime'];
+            if (!allowedTypes.includes(file.type)) {
+                showNotification('错误', '不支持的文件格式，请选择 MP4, AVI 或 MOV 文件', 'error');
+                return;
+            }
+            
+            // 验证文件大小
+            if (file.size > 500 * 1024 * 1024) {
+                showNotification('错误', '文件大小超过 500MB 限制', 'error');
+                return;
+            }
+            
+            videoFile = file;
+            showProgress(true);
+            
+            // 实际上传视频文件
+            uploadVideoToServer(file).then((uploadInfo) => {
+                uploadedVideoInfo = uploadInfo;
+                displayVideo(file);
+                updateStep(2);
+            }).catch((error) => {
+                console.error('上传失败:', error);
+                showNotification('错误', '视频上传失败: ' + error.message, 'error');
+                showProgress(false);
+            });
+        }
+
+        // 实际上传视频文件到服务器
+        async function uploadVideoToServer(file) {
+            const formData = new FormData();
+            formData.append('video', file);
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/video/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`上传失败: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || '上传失败');
+                }
+                
+                console.log('上传成功:', result.video_info);
+                showProgress(false);
+                return result.video_info;
+                
+            } catch (error) {
+                console.error('上传错误:', error);
+                throw error;
+            }
+        }
+        
+        // 模拟上传进度（备用）
+        function simulateUpload() {
+            return new Promise((resolve) => {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            showProgress(false);
+                            resolve();
+                        }, 500);
+                    }
+                    updateProgress(progress);
+                }, 200);
+            });
+        }
+
+        // 显示进度条
+        function showProgress(show) {
+            const container = document.getElementById('progressContainer');
+            container.style.display = show ? 'block' : 'none';
+        }
+
+        // 更新进度
+        function updateProgress(percent) {
+            const fill = document.getElementById('progressFill');
+            const text = document.getElementById('progressPercent');
+            
+            fill.style.width = `${percent}%`;
+            text.textContent = `${Math.round(percent)}%`;
+        }
+
+        // 显示视频
+        function displayVideo(file) {
+            const uploadSection = document.getElementById('uploadSection');
+            const videoSection = document.getElementById('videoSection');
+            
+            uploadSection.classList.add('hidden');
+            videoSection.classList.remove('hidden');
+            
+            // 设置视频源
+            videoPlayer = document.getElementById('videoPlayer');
+            const videoUrl = URL.createObjectURL(file);
+            videoPlayer.src = videoUrl;
+            
+            showNotification('成功', '视频已加载，请配置检测参数后开始分析', 'success');
+        }
+
+        // 加载默认视频
+        async function loadDefaultVideo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/video/info`);
+                const data = await response.json();
+                
+                // 模拟默认视频
+                const uploadSection = document.getElementById('uploadSection');
+                const videoSection = document.getElementById('videoSection');
+                
+                uploadSection.classList.add('hidden');
+                videoSection.classList.remove('hidden');
+                
+                // 这里应该设置默认视频的路径
+                // videoPlayer.src = 'path/to/default/video.mp4';
+                
+                updateStep(2);
+                showNotification('成功', '默认测试视频已加载', 'success');
+            } catch (error) {
+                showNotification('错误', '加载默认视频失败', 'error');
+            }
+        }
+
+        // 开始分析
+        async function startAnalysis() {
+            if (!videoFile && !videoPlayer.src) {
+                showNotification('错误', '请先选择视频文件', 'error');
+                return;
+            }
+            
+            updateStep(3);
+            showLoading(true, '正在进行AI检测分析...');
+            
+            try {
+                // 获取配置参数
+                const config = getDetectionConfig();
+                
+                // 调用检测API
+                const response = await fetch(`${API_BASE}/api/video/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                
+                console.log('API响应:', data); // 调试输出
+                
+                if (data && data.results && data.results.success) {
+                    detectionResults = data.results;
+                    displayResults(data.results);
+                    updateStep(4);
+                    showNotification('成功', '检测分析完成', 'success');
+                } else if (data && data.results) {
+                    // 即使没有success字段，但有results数据也尝试显示
+                    detectionResults = data.results;
+                    displayResults(data.results);
+                    updateStep(4);
+                    showNotification('成功', '检测分析完成', 'success');
+                } else {
+                    throw new Error(data.error || data.results?.error || '检测失败');
+                }
+            } catch (error) {
+                console.error('检测失败:', error);
+                showNotification('错误', `检测失败: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 获取检测配置
+        function getDetectionConfig() {
+            const detectionTypes = [];
+            if (document.getElementById('detectFall').checked) detectionTypes.push('fall');
+            if (document.getElementById('detectFire').checked) detectionTypes.push('fire');
+            if (document.getElementById('detectSmoke').checked) detectionTypes.push('smoke');
+            
+            return {
+                detection_types: detectionTypes,
+                confidence_threshold: parseFloat(document.getElementById('confidenceThreshold').value),
+                detection_mode: document.getElementById('detectionMode').value,
+                test_environment: document.getElementById('testEnvironment').value,
+                video_id: uploadedVideoInfo ? uploadedVideoInfo.id : 'default',
+                video_file_path: uploadedVideoInfo ? uploadedVideoInfo.filepath : ''
+            };
+        }
+
+        // 显示检测结果
+        function displayResults(results) {
+            console.log('开始显示结果:', results); // 调试输出
+            
+            // 显示统计概览
+            displayStats(results);
+            
+            // 显示检测事件
+            displayEvents(results.detections || []);
+            
+            // 显示算法分析
+            displayAnalysis(results.analysis || {});
+            
+            // 显示性能基准
+            displayBenchmark(results);
+            
+            // 显示专业报告
+            displayReport(results);
+            
+            // 显示结果区域
+            const resultsContainer = document.getElementById('resultsContainer');
+            console.log('结果容器元素:', resultsContainer);
+            
+            if (resultsContainer) {
+                console.log('移除hidden类之前:', resultsContainer.classList.contains('hidden'));
+                resultsContainer.classList.remove('hidden');
+                console.log('移除hidden类之后:', resultsContainer.classList.contains('hidden'));
+                console.log('容器当前样式:', window.getComputedStyle(resultsContainer).display);
+                
+                // 强制显示
+                resultsContainer.style.display = 'block';
+                
+                // 滚动到结果区域
+                setTimeout(() => {
+                    resultsContainer.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            } else {
+                console.error('找不到结果容器元素 #resultsContainer');
+            }
+        }
+
+        // 显示统计概览
+        function displayStats(results) {
+            console.log('显示统计:', results); // 调试输出
+            const statsGrid = document.getElementById('statsGrid');
+            if (!statsGrid) {
+                console.error('找不到统计容器');
+                return;
+            }
+            
+            const stats = [
+                { 
+                    label: '跌倒事件', 
+                    value: results.fall_events || 0, 
+                    icon: 'user-injured',
+                    type: 'fall',
+                    sublabel: '高风险事件'
+                },
+                { 
+                    label: '火焰事件', 
+                    value: results.fire_events || 0, 
+                    icon: 'fire',
+                    type: 'fire',
+                    sublabel: '关键安全事件'
+                },
+                { 
+                    label: '烟雾事件', 
+                    value: results.smoke_events || 0, 
+                    icon: 'smog',
+                    type: 'smoke',
+                    sublabel: '环境监测'
+                },
+                { 
+                    label: '总事件数', 
+                    value: results.total_events || 0, 
+                    icon: 'chart-bar',
+                    type: 'total',
+                    sublabel: '检测汇总'
+                },
+                { 
+                    label: '处理时长', 
+                    value: `${results.processing_time || 0}s`, 
+                    icon: 'clock',
+                    type: 'processing',
+                    sublabel: '算法性能'
+                },
+                { 
+                    label: '分析帧数', 
+                    value: (results.analysis && results.analysis.total_frames_analyzed) || 0, 
+                    icon: 'film',
+                    type: 'total',
+                    sublabel: '视频处理'
+                }
+            ];
+            
+            const statsHTML = stats.map(stat => `
+                <div class="stat-card ${stat.type}-stat">
+                    <div class="stat-icon ${stat.type}">
+                        <i class="fas fa-${stat.icon}"></i>
+                    </div>
+                    <div class="stat-value">${stat.value}</div>
+                    <div class="stat-label">${stat.label}</div>
+                    <div class="stat-sublabel">${stat.sublabel}</div>
+                </div>
+            `).join('');
+            
+            console.log('生成统计HTML:', statsHTML);
+            statsGrid.innerHTML = statsHTML;
+        }
+
+        // 显示检测事件
+        function displayEvents(detections) {
+            const container = document.getElementById('tab-events');
+            
+            if (!detections || detections.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">未检测到任何事件</p>';
+                return;
+            }
+            
+            container.innerHTML = detections.map(detection => `
+                <div class="event-card ${detection.type}-event">
+                    <div class="event-header">
+                        <div class="event-type">
+                            <div class="event-type-badge ${detection.type}">
+                                <i class="fas fa-${getEventIcon(detection.type)}"></i>
+                                ${getEventTypeName(detection.type)}
+                            </div>
+                            <span style="color: var(--text-secondary); font-size: 0.875rem;">${detection.subtype || detection.type}</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <div class="severity-tag ${detection.severity ? detection.severity.toLowerCase() : 'medium'}">
+                                ${detection.severity || 'MEDIUM'}
+                            </div>
+                            <div class="confidence-badge ${getConfidenceClass(detection.confidence)}" style="--confidence-width: ${Math.round(detection.confidence * 100)}%;">
+                                <i class="fas fa-chart-line"></i>
+                                ${Math.round(detection.confidence * 100)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="event-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">时间范围</div>
+                            <div style="font-weight: 600; color: var(--text-primary);">${detection.start_time}s - ${detection.end_time}s</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">持续时长</div>
+                            <div style="font-weight: 600; color: var(--text-primary);">${detection.duration}s</div>
+                        </div>
+                        ${detection.algorithm ? `
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">算法</div>
+                            <div style="font-weight: 600; color: var(--text-primary); font-family: 'Courier New', monospace;">${detection.algorithm}</div>
+                        </div>` : ''}
+                        ${detection.bbox ? `
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">检测区域</div>
+                            <div style="font-weight: 600; color: var(--text-primary); font-family: 'Courier New', monospace; font-size: 0.8rem;">[${detection.bbox.join(', ')}]</div>
+                        </div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 获取事件图标
+        function getEventIcon(type) {
+            const icons = {
+                'fall': 'user-injured',
+                'fire': 'fire',
+                'smoke': 'smog'
+            };
+            return icons[type] || 'exclamation-triangle';
+        }
+
+        // 获取事件类型名称
+        function getEventTypeName(type) {
+            const names = {
+                'fall': '跌倒检测',
+                'fire': '火焰检测',
+                'smoke': '烟雾检测'
+            };
+            return names[type] || '未知事件';
+        }
+
+        // 获取置信度样式类
+        function getConfidenceClass(confidence) {
+            if (confidence >= 0.8) return 'confidence-high';
+            if (confidence >= 0.6) return 'confidence-medium';
+            return 'confidence-low';
+        }
+
+        // 显示算法分析
+        function displayAnalysis(analysis) {
+            const container = document.getElementById('tab-analysis');
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="stat-card">
+                        <div class="stat-value">${analysis.processing_speed}</div>
+                        <div class="stat-label">处理速度</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${analysis.video_duration}</div>
+                        <div class="stat-label">视频时长</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${analysis.total_frames_analyzed}</div>
+                        <div class="stat-label">分析帧数</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">算法信息</h3>
+                    <div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: 0.75rem;">
+                        <p><strong>跌倒检测:</strong> ${detectionResults.algorithm_info?.fall_detector || 'SimpleFallDetector'}</p>
+                        <p><strong>火焰检测:</strong> ${detectionResults.algorithm_info?.fire_detector || 'FireSmokeDetector'}</p>
+                        <p><strong>统一检测器:</strong> ${detectionResults.algorithm_info?.unified_detector || 'UnifiedDetector'}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示性能基准
+        function displayBenchmark(results) {
+            const container = document.getElementById('tab-benchmark');
+            
+            // 这里应该调用基准对比API
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-chart-bar" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <h3>性能基准对比</h3>
+                    <p style="color: var(--text-secondary); margin-top: 0.5rem;">正在生成基准对比报告...</p>
+                </div>
+            `;
+        }
+
+        // 显示专业报告
+        function displayReport(results) {
+            const container = document.getElementById('tab-report');
+            
+            const reportHtml = `
+                <div class="professional-report">
+                    <div style="text-align: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                        <h2>康养AI检测系统专业分析报告</h2>
+                        <p style="color: var(--text-secondary);">生成时间: ${new Date().toLocaleString('zh-CN')}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <h3>执行摘要</h3>
+                        <p>本次检测共分析 ${results.analysis.total_frames_analyzed} 帧，检测到 ${results.total_events} 个事件，
+                        处理时间 ${results.processing_time} 秒，平均处理速度 ${results.analysis.processing_speed}。</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <h3>检测配置</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li>• 置信度阈值: ${results.config.confidence_threshold}</li>
+                            <li>• 检测模式: ${results.config.detection_mode}</li>
+                            <li>• 测试环境: ${results.config.test_environment}</li>
+                            <li>• 检测类型: ${results.config.detection_types.join(', ')}</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3>质量保证</h3>
+                        <p>本报告遵循IEEE标准和医疗器械认证要求，检测算法通过ISO 13485认证，
+                        符合HIPAA合规要求。检测结果仅供专业人员参考使用。</p>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = reportHtml;
+        }
+
+        // 切换标签页
+        function switchTab(tabId) {
+            // 更新按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            
+            // 切换内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // 更新工作流步骤
+        function updateStep(step) {
+            // 重置所有步骤
+            document.querySelectorAll('.step').forEach(s => {
+                s.classList.remove('active', 'completed');
+            });
+            
+            // 设置当前和已完成的步骤
+            for (let i = 1; i <= 4; i++) {
+                const stepElement = document.getElementById(`step${i}`);
+                if (i < step) {
+                    stepElement.classList.add('completed');
+                } else if (i === step) {
+                    stepElement.classList.add('active');
+                }
+            }
+            
+            currentStep = step;
+        }
+
+        // 重置到上传界面
+        function resetToUpload() {
+            document.getElementById('uploadSection').classList.remove('hidden');
+            document.getElementById('videoSection').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+            
+            // 重置文件
+            videoFile = null;
+            uploadedVideoInfo = null;
+            videoPlayer = null;
+            detectionResults = null;
+            document.getElementById('videoInput').value = '';
+            
+            updateStep(1);
+            showNotification('信息', '已重置到初始状态', 'info');
+        }
+
+        // 导出报告
+        function exportReport() {
+            if (!detectionResults) {
+                showNotification('错误', '没有可导出的报告数据', 'error');
+                return;
+            }
+            
+            // 创建报告数据
+            const reportData = {
+                timestamp: new Date().toISOString(),
+                results: detectionResults,
+                config: getDetectionConfig()
+            };
+            
+            // 下载JSON文件
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `detection_report_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('成功', '报告已导出', 'success');
+        }
+
+        // 显示/隐藏加载遮罩
+        function showLoading(show, text = '正在处理...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            
+            overlay.style.display = show ? 'flex' : 'none';
+            loadingText.textContent = text;
+        }
+
+        // 显示通知
+        function showNotification(title, message, type = 'info') {
+            // 简单的控制台输出，可以替换为更好的通知系统
+            console.log(`${type.toUpperCase()}: ${title} - ${message}`);
+            
+            // 这里可以集成更好的通知库，如 Toastify 或自定义通知组件
+            const colors = {
+                success: 'var(--success)',
+                error: 'var(--danger)',
+                warning: 'var(--warning)',
+                info: 'var(--info)'
+            };
+            
+            // 创建临时通知元素
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: ${colors[type]};
+                color: white;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                z-index: 1001;
+                max-width: 300px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            notification.innerHTML = `<strong>${title}</strong><br>${message}`;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

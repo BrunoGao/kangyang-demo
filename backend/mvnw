@@ -1,0 +1,4 @@
+#!/bin/sh
+    MAVEN_PROJECTBASEDIR=${MAVEN_BASEDIR:-"$PWD"}
+    MAVEN_OPTS="$MAVEN_OPTS -Djava.awt.headless=true"
+    exec java $MAVEN_OPTS -classpath maven-wrapper.jar "-Dmaven.multiModuleProjectDirectory=$MAVEN_PROJECTBASEDIR" org.apache.maven.wrapper.MavenWrapperMain "$@"

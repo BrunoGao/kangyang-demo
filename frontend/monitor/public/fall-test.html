@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 康养AI跌倒检测算法演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #4CAF50, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .demo-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .test-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .status-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin: 10px 0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-healthy { color: #4CAF50; }
+        .status-error { color: #f44336; }
+        
+        .redirect-info {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .redirect-link {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            display: inline-block;
+            margin: 10px 0;
+            padding: 10px 20px;
+            border: 2px solid #00d4ff;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .redirect-link:hover {
+            background: #00d4ff;
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="header">
+            <h1>🤖 康养AI跌倒检测算法演示</h1>
+            <p>专业级跌倒检测算法，专为养老机构设计 | 精准·快速·可靠</p>
+        </div>
+        
+        <div class="demo-section">
+            <h2>🎯 跌倒算法测试平台</h2>
+            <div class="status-item" id="apiStatus">
+                <span>API服务状态</span>
+                <span id="apiStatusText">检查中...</span>
+            </div>
+            
+            <div class="redirect-info">
+                <h3>📊 专业测试平台</h3>
+                <p>点击下方链接进入完整的跌倒检测算法测试平台：</p>
+                <a href="file:///Users/bg/work/codes/kangyang-demo/fall_algorithm_demo.html" class="redirect-link" target="_blank">
+                    🚀 打开专业测试平台
+                </a>
+                
+                <div style="margin-top: 20px;">
+                    <h4>✨ 测试平台功能：</h4>
+                    <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8;">
+                        <li>📹 视频导入和处理</li>
+                        <li>🧠 AI算法实时检测</li>
+                        <li>📊 详细性能指标分析</li>
+                        <li>🏆 算法对比和优势展示</li>
+                        <li>📈 行业标准验证报告</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="status-item">
+                <span>测试视频</span>
+                <span id="videoStatus">falldown.mp4 (85.5MB)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查API状态
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch('http://localhost:6000/health');
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    document.getElementById('apiStatusText').textContent = '✅ API服务正常';
+                    document.getElementById('apiStatus').className = 'status-item';
+                    document.getElementById('apiStatusText').className = 'status-healthy';
+                } else {
+                    throw new Error('API服务异常');
+                }
+            } catch (error) {
+                document.getElementById('apiStatusText').textContent = '❌ API服务离线';
+                document.getElementById('apiStatusText').className = 'status-error';
+                console.error('API检查失败:', error);
+            }
+        }
+        
+        // 页面加载后检查API状态
+        window.onload = function() {
+            checkAPIStatus();
+        };
+    </script>
+</body>
+</html>

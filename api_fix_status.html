@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 API连接修复状态</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .status-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
+        .error { background: rgba(244, 67, 54, 0.3); color: #f44336; }
+        .warning { background: rgba(255, 152, 0, 0.3); color: #FF9800; }
+        .test-btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #4CAF50;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        h1 { text-align: center; margin-bottom: 40px; }
+        h2 { color: #4CAF50; }
+        pre { 
+            background: rgba(0,0,0,0.3); 
+            padding: 15px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 康养AI跌倒检测 - API连接修复状态</h1>
+    
+    <div class="status-section">
+        <h2>🏥 服务器状态检查</h2>
+        <div id="serverStatus"></div>
+        
+        <h2>🔗 API连接测试</h2>
+        <div id="apiTests"></div>
+        
+        <h2>🎯 快速测试链接</h2>
+        <a href="http://localhost:3000/fall_detection_professional_test.html" class="test-btn" target="_blank">
+            管理系统测试平台
+        </a>
+        <a href="http://localhost:3001/fall_detection_professional_test.html" class="test-btn" target="_blank">
+            监控系统测试平台
+        </a>
+    </div>
+    
+    <div class="status-section">
+        <h2>✅ 已完成的修复</h2>
+        <div class="status-item success">
+            <span>修复页面加载时的"正在处理"状态</span>
+            <span>✅</span>
+        </div>
+        <div class="status-item success">
+            <span>删除重复的updateProgress函数</span>
+            <span>✅</span>
+        </div>
+        <div class="status-item success">
+            <span>改进CORS和错误处理</span>
+            <span>✅</span>
+        </div>
+        <div class="status-item success">
+            <span>启动专用API服务器(端口6000)</span>
+            <span>✅</span>
+        </div>
+        <div class="status-item success">
+            <span>同步修复文件到前端系统</span>
+            <span>✅</span>
+        </div>
+    </div>
+    
+    <div class="status-section">
+        <h2>📊 API响应示例</h2>
+        <pre id="apiResponse">正在加载...</pre>
+    </div>
+
+    <script>
+        async function checkServerStatus() {
+            const statusDiv = document.getElementById('serverStatus');
+            const apiTestDiv = document.getElementById('apiTests');
+            const responseDiv = document.getElementById('apiResponse');
+            
+            // 检查API服务器
+            try {
+                statusDiv.innerHTML = '<div class="status-item warning"><span>检查API服务器...</span><span class="loading"></span></div>';
+                
+                const response = await fetch('http://localhost:6000/health', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `
+                        <div class="status-item success">
+                            <span>API服务器 (localhost:6000)</span>
+                            <span>✅ ${data.status}</span>
+                        </div>
+                        <div class="status-item success">
+                            <span>服务名称: ${data.service}</span>
+                            <span>🚀</span>
+                        </div>
+                    `;
+                    
+                    // 显示完整响应
+                    responseDiv.textContent = JSON.stringify(data, null, 2);
+                    
+                    // 测试其他API端点
+                    testAPIEndpoints();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status-item error">
+                        <span>API服务器连接失败</span>
+                        <span>❌</span>
+                    </div>
+                    <div class="status-item warning">
+                        <span>错误: ${error.message}</span>
+                        <span>⚠️</span>
+                    </div>
+                `;
+                responseDiv.textContent = '无法获取API响应: ' + error.message;
+            }
+        }
+        
+        async function testAPIEndpoints() {
+            const apiTestDiv = document.getElementById('apiTests');
+            const endpoints = [
+                { name: 'Health Check', url: '/health', method: 'GET' },
+                { name: 'Video Info', url: '/api/video/info', method: 'GET' },
+                { name: 'Algorithm Comparison', url: '/api/algorithm/comparison', method: 'GET' }
+            ];
+            
+            let html = '';
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`http://localhost:6000${endpoint.url}`);
+                    const status = response.ok ? '✅' : '❌';
+                    const statusClass = response.ok ? 'success' : 'error';
+                    html += `
+                        <div class="status-item ${statusClass}">
+                            <span>${endpoint.name} (${endpoint.method} ${endpoint.url})</span>
+                            <span>${status} ${response.status}</span>
+                        </div>
+                    `;
+                } catch (error) {
+                    html += `
+                        <div class="status-item error">
+                            <span>${endpoint.name} (${endpoint.method} ${endpoint.url})</span>
+                            <span>❌ 连接失败</span>
+                        </div>
+                    `;
+                }
+            }
+            apiTestDiv.innerHTML = html;
+        }
+        
+        // 页面加载时执行检查
+        window.onload = function() {
+            checkServerStatus();
+        };
+    </script>
+</body>
+</html>

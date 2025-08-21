@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>测试页面</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏥 康养AI跌倒检测专业测试平台</h1>
+    <div class="status" id="apiStatus">正在检查API状态...</div>
+    
+    <script>
+        console.log('页面加载成功');
+        
+        async function checkAPI() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                document.getElementById('apiStatus').innerHTML = '✅ API状态: ' + data.status;
+                console.log('API响应:', data);
+            } catch (error) {
+                document.getElementById('apiStatus').innerHTML = '❌ API连接失败';
+                console.error('API错误:', error);
+            }
+        }
+        
+        checkAPI();
+    </script>
+</body>
+</html>

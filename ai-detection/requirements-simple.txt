@@ -1,7 +1,5 @@
-flask==2.3.3
-opencv-python
-numpy
-mediapipe
-requests
-redis
-python-dotenv
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+aiofiles

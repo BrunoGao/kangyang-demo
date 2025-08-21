@@ -7,10 +7,10 @@ spring:
 
   # 数据库配置
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/kangyang?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-    username: kangyang
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/kangyang?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: ${DB_USER:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    password: kangyang123
+    password: ${DB_PASSWORD:123456}
 
   # JPA配置
   jpa:

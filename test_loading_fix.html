@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加载状态修复测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .test-btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-weight: bold;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
+        .error { background: rgba(244, 67, 54, 0.3); color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🔧 加载状态修复测试</h1>
+    
+    <div class="test-section">
+        <h2>问题诊断</h2>
+        <div id="diagnosis"></div>
+        
+        <h2>修复内容</h2>
+        <div class="status success">
+            ✅ 删除了重复的updateProgress函数定义
+        </div>
+        <div class="status success">
+            ✅ 修改updateProgress只在测试时显示加载覆盖层
+        </div>
+        <div class="status success">
+            ✅ 确保加载覆盖层默认隐藏状态
+        </div>
+        
+        <h2>测试链接</h2>
+        <a href="/fall_detection_professional_test.html" class="test-btn" target="_blank">
+            打开修复后的专业测试平台
+        </a>
+        
+        <div id="testResult" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        function diagnose() {
+            const diagnosis = document.getElementById('diagnosis');
+            let issues = [];
+            
+            // 模拟检查
+            if (document.querySelector('#loadingOverlay')) {
+                issues.push('✅ 找到加载覆盖层元素');
+            }
+            
+            if (issues.length === 0) {
+                issues.push('❌ 未发现明显问题');
+            }
+            
+            diagnosis.innerHTML = issues.map(issue => 
+                `<div class="status ${issue.includes('✅') ? 'success' : 'error'}">${issue}</div>`
+            ).join('');
+        }
+        
+        // 页面加载后执行诊断
+        window.onload = function() {
+            diagnose();
+            
+            // 提供测试反馈
+            setTimeout(() => {
+                const result = document.getElementById('testResult');
+                result.innerHTML = `
+                    <div class="status success">
+                        如果专业测试平台页面加载正常（没有立即显示"正在处理"），说明修复成功！
+                    </div>
+                `;
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

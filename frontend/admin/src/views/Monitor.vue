@@ -194,6 +194,24 @@
             <span class="status-value warning">⚠️ 2台离线</span>
           </div>
         </div>
+        
+        <!-- 跌倒算法测试入口 -->
+        <div class="test-section">
+          <div class="test-header">
+            <span class="test-icon">🧪</span>
+            <span class="test-title">算法测试</span>
+          </div>
+          <div class="test-actions">
+            <button class="test-btn" @click="openFallTest">
+              <span class="btn-icon">🎯</span>
+              跌倒检测测试
+            </button>
+            <div class="test-status" :class="{ 'online': fallTestApiStatus }">
+              <span class="status-indicator"></span>
+              {{ fallTestApiStatus ? 'API正常' : 'API离线' }}
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 性能指标面板 -->
@@ -259,6 +277,7 @@
 <script>
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
 import dayjs from 'dayjs'
+import axios from 'axios'
 
 export default defineComponent({
   name: 'AIMonitorCenter',
@@ -267,6 +286,7 @@ export default defineComponent({
     const currentDate = ref('')
     const autoRefresh = ref(true)
     const timeInterval = ref(null)
+    const fallTestApiStatus = ref(false)
     
     // 统计数据
     const statistics = ref({
@@ -425,10 +445,39 @@ export default defineComponent({
     const helpCenter = () => {
       console.log('帮助中心')
     }
+
+    // 检查跌倒测试API状态
+    const checkFallTestAPI = async () => {
+      try {
+        const response = await axios.get('/fall-api/health', {
+          timeout: 5000,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        fallTestApiStatus.value = response.data.status === 'healthy'
+        console.log('跌倒测试API状态检查成功:', response.data)
+      } catch (error) {
+        fallTestApiStatus.value = false
+        console.error('跌倒测试API检查失败:', error.message)
+        console.error('错误详情:', error.response?.data || error)
+      }
+    }
+
+    // 打开跌倒测试页面
+    const openFallTest = () => {
+      const testPagePath = '/fall_detection_professional_test.html'
+      window.open(testPagePath, '_blank')
+      console.log('打开专业跌倒测试页面:', testPagePath)
+    }
     
     onMounted(() => {
       updateTime()
       timeInterval.value = setInterval(updateTime, 1000)
+      checkFallTestAPI()
+      
+      // 定期检查跌倒测试API状态
+      setInterval(checkFallTestAPI, 30000)
     })
     
     onUnmounted(() => {
@@ -444,6 +493,7 @@ export default defineComponent({
       statistics,
       floors,
       recentAlerts,
+      fallTestApiStatus,
       getCameraClass,
       getFloorStatus,
       getDetectionLabel,
@@ -454,7 +504,8 @@ export default defineComponent({
       exportReport,
       systemSettings,
       viewHistory,
-      helpCenter
+      helpCenter,
+      openFallTest
     }
   }
 })
@@ -1046,6 +1097,98 @@ export default defineComponent({
 
 .status-value.warning {
   color: #f59e0b;
+}
+
+/* 跌倒测试区域样式 */
+.test-section {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.test-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.test-icon {
+  font-size: 16px;
+}
+
+.test-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.test-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.test-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.test-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.test-btn:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  font-size: 14px;
+}
+
+.test-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.test-status.online {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.test-status.online .status-indicator {
+  background: #10b981;
+  animation: blink 2s infinite;
 }
 
 .performance-metrics {

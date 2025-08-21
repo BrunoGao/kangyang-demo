@@ -176,6 +176,25 @@
               <div class="status-value">{{ systemLoad }}%</div>
             </div>
           </div>
+          
+          <!-- 跌倒算法测试入口 -->
+          <div class="test-section">
+            <div class="test-title">🧪 算法测试</div>
+            <div class="test-buttons">
+              <a 
+                :href="fallTestUrl" 
+                target="_blank"
+                class="test-btn"
+                @click="openFallTest"
+              >
+                <el-icon><VideoPlay /></el-icon>
+                跌倒检测测试
+              </a>
+              <div class="test-status" :class="{ 'online': fallTestApiStatus }">
+                {{ fallTestApiStatus ? '✅ 测试API正常' : '❌ 测试API离线' }}
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 严重程度分布 -->
@@ -216,7 +235,7 @@
 import { defineComponent, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { 
   Warning, Clock, DataAnalysis, VideoCamera, Bell, 
-  CircleCheck, WarningFilled, Lock 
+  CircleCheck, WarningFilled, Lock, VideoPlay 
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
@@ -226,7 +245,7 @@ export default defineComponent({
   name: 'MonitorScreen',
   components: {
     Warning, Clock, DataAnalysis, VideoCamera, Bell,
-    CircleCheck, WarningFilled, Lock
+    CircleCheck, WarningFilled, Lock, VideoPlay
   },
   setup() {
     const currentTime = ref('')
@@ -238,6 +257,8 @@ export default defineComponent({
     const hasNewAlert = ref(false)
     const alertDialogVisible = ref(false)
     const currentAlert = ref(null)
+    const fallTestApiStatus = ref(false)
+    const fallTestUrl = ref('')
     
     const trendChart = ref(null)
     const pieChart = ref(null)
@@ -529,11 +550,33 @@ export default defineComponent({
       return severity === 'immediate' ? '紧急' : '严重'
     }
 
+    // 检查跌倒测试API状态
+    const checkFallTestAPI = async () => {
+      try {
+        const response = await axios.get('http://localhost:6000/health')
+        fallTestApiStatus.value = response.data.status === 'healthy'
+        
+        // 设置测试页面URL (使用绝对路径)
+        fallTestUrl.value = window.location.protocol + '//' + window.location.host.replace('3001', '3000') + '/fall_algorithm_demo.html'
+      } catch (error) {
+        fallTestApiStatus.value = false
+        console.error('跌倒测试API检查失败:', error)
+      }
+    }
+
+    // 打开跌倒测试页面
+    const openFallTest = () => {
+      // 使用专业测试平台页面
+      const testPagePath = '/fall_detection_professional_test.html'
+      window.open(testPagePath, '_blank')
+    }
+
     onMounted(() => {
       updateTime()
       timeInterval = setInterval(updateTime, 1000)
       
       loadData()
+      checkFallTestAPI()
       
       nextTick(() => {
         initTrendChart()
@@ -543,6 +586,9 @@ export default defineComponent({
 
       // 模拟告警，30秒后触发一次
       setTimeout(simulateAlert, 30000)
+      
+      // 定期检查跌倒测试API状态
+      setInterval(checkFallTestAPI, 30000)
     })
 
     onUnmounted(() => {
@@ -570,6 +616,8 @@ export default defineComponent({
       hasNewAlert,
       alertDialogVisible,
       currentAlert,
+      fallTestApiStatus,
+      fallTestUrl,
       cameras,
       electronicFences,
       trendChart,
@@ -579,7 +627,8 @@ export default defineComponent({
       handleAlertClose,
       formatTime,
       getEventTypeText,
-      getSeverityText
+      getSeverityText,
+      openFallTest
     }
   }
 })
@@ -965,6 +1014,63 @@ export default defineComponent({
 
 .status-value.online {
   color: #4caf50;
+}
+
+.test-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #2a4a6b;
+}
+
+.test-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #00d4ff;
+  margin-bottom: 15px;
+}
+
+.test-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.test-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.test-btn:hover {
+  background: linear-gradient(45deg, #45a049, #4CAF50);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.test-status {
+  font-size: 12px;
+  text-align: center;
+  padding: 8px;
+  border-radius: 4px;
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.test-status.online {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
 }
 
 .alert-dialog {
