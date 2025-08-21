@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import mediapipe as mp
 import time
+import os
 from typing import Dict, List, Tuple, Optional
 import json
 import redis
@@ -27,7 +28,9 @@ class FallDetector:
         
         # Redis连接
         try:
-            self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+            redis_host = os.getenv('REDIS_HOST', 'localhost')
+            redis_port = int(os.getenv('REDIS_PORT', '6379'))
+            self.redis_client = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
         except:
             self.redis_client = None
             print("Redis连接失败，将使用本地存储")

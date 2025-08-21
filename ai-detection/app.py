@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import base64
 import json
+import os
 import redis
 from fall_detector import FallDetector
 import threading
@@ -19,7 +20,9 @@ detector = FallDetector()
 redis_client = None
 
 try:
-    redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    redis_host = os.getenv('REDIS_HOST', 'localhost')
+    redis_port = int(os.getenv('REDIS_PORT', '6379'))
+    redis_client = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
     redis_client.ping()
     print("Redis连接成功")
 except:

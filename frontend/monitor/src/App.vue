@@ -64,6 +64,22 @@
           <div class="panel-title">告警趋势</div>
           <div ref="trendChart" class="chart"></div>
         </div>
+
+        <!-- 电子围栏状态 -->
+        <div class="panel fence-panel">
+          <div class="panel-title">电子围栏</div>
+          <div class="fence-status">
+            <div class="fence-item" v-for="fence in electronicFences" :key="fence.id">
+              <div class="fence-info">
+                <div class="fence-name">{{ fence.name }}</div>
+                <div class="fence-area">{{ fence.area }}</div>
+              </div>
+              <div class="fence-indicator" :class="fence.status">
+                <el-icon><Lock v-if="fence.status === 'active'" /><Warning v-else /></el-icon>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 中间区域 -->
@@ -85,9 +101,27 @@
                     </div>
                   </div>
                 </div>
+                <!-- 电子围栏覆盖层 -->
+                <div class="fence-overlay" v-if="camera.hasFence">
+                  <svg class="fence-svg" viewBox="0 0 100 100">
+                    <polygon 
+                      :points="camera.fencePoints" 
+                      fill="rgba(0, 212, 255, 0.1)" 
+                      stroke="#00d4ff" 
+                      stroke-width="0.5"
+                      stroke-dasharray="2,2"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- 运动轨迹图 -->
+        <div class="panel trajectory-panel">
+          <div class="panel-title">运动轨迹</div>
+          <div ref="trajectoryChart" class="chart"></div>
         </div>
       </div>
 
@@ -182,7 +216,7 @@
 import { defineComponent, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { 
   Warning, Clock, DataAnalysis, VideoCamera, Bell, 
-  CircleCheck, WarningFilled 
+  CircleCheck, WarningFilled, Lock 
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
@@ -192,7 +226,7 @@ export default defineComponent({
   name: 'MonitorScreen',
   components: {
     Warning, Clock, DataAnalysis, VideoCamera, Bell,
-    CircleCheck, WarningFilled
+    CircleCheck, WarningFilled, Lock
   },
   setup() {
     const currentTime = ref('')
@@ -207,8 +241,10 @@ export default defineComponent({
     
     const trendChart = ref(null)
     const pieChart = ref(null)
+    const trajectoryChart = ref(null)
     let trendChartInstance = null
     let pieChartInstance = null
+    let trajectoryChartInstance = null
     let timeInterval = null
 
     // 模拟摄像头数据
@@ -217,25 +253,54 @@ export default defineComponent({
         id: 1,
         name: '摄像头-01',
         location: '客厅',
-        status: 'online'
+        status: 'online',
+        hasFence: true,
+        fencePoints: '20,20 80,20 80,80 20,80'
       },
       {
         id: 2,
         name: '摄像头-02', 
         location: '卧室',
-        status: 'online'
+        status: 'online',
+        hasFence: true,
+        fencePoints: '10,30 90,30 90,70 10,70'
       },
       {
         id: 3,
         name: '摄像头-03',
         location: '卫生间',
-        status: 'offline'
+        status: 'offline',
+        hasFence: false
       },
       {
         id: 4,
         name: '摄像头-04',
         location: '厨房',
-        status: 'online'
+        status: 'online',
+        hasFence: true,
+        fencePoints: '25,15 75,15 75,85 25,85'
+      }
+    ])
+
+    // 电子围栏数据
+    const electronicFences = ref([
+      {
+        id: 1,
+        name: '客厅安全区',
+        area: '客厅',
+        status: 'active'
+      },
+      {
+        id: 2,
+        name: '卧室监护区',
+        area: '卧室',
+        status: 'active'
+      },
+      {
+        id: 3,
+        name: '厨房警戒区',
+        area: '厨房',
+        status: 'warning'
       }
     ])
 
@@ -316,6 +381,76 @@ export default defineComponent({
         }]
       }
       pieChartInstance.setOption(option)
+    }
+
+    // 初始化运动轨迹图
+    const initTrajectoryChart = () => {
+      if (!trajectoryChart.value) return
+      
+      trajectoryChartInstance = echarts.init(trajectoryChart.value)
+      const option = {
+        grid: {
+          top: 20,
+          left: 30,
+          right: 20,
+          bottom: 30
+        },
+        xAxis: {
+          type: 'value',
+          min: 0,
+          max: 100,
+          axisLine: { lineStyle: { color: '#4a9eff' } },
+          axisLabel: { show: false },
+          splitLine: { lineStyle: { color: '#2a4a6b' } }
+        },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          max: 100,
+          axisLine: { lineStyle: { color: '#4a9eff' } },
+          axisLabel: { show: false },
+          splitLine: { lineStyle: { color: '#2a4a6b' } }
+        },
+        series: [
+          {
+            name: '运动轨迹',
+            type: 'line',
+            data: [
+              [20, 30], [25, 35], [30, 40], [35, 45], [40, 50],
+              [45, 55], [50, 60], [55, 65], [60, 70], [65, 75]
+            ],
+            lineStyle: { color: '#00d4ff', width: 2 },
+            itemStyle: { color: '#00d4ff' },
+            symbol: 'circle',
+            symbolSize: 4
+          },
+          {
+            name: '当前位置',
+            type: 'scatter',
+            data: [[65, 75]],
+            itemStyle: { 
+              color: '#ff4757',
+              borderColor: '#ffffff',
+              borderWidth: 2
+            },
+            symbolSize: 8,
+            animation: true,
+            animationType: 'scale'
+          },
+          {
+            name: '安全区域',
+            type: 'polygon',
+            data: [[20, 20], [80, 20], [80, 80], [20, 80]],
+            itemStyle: {
+              color: 'rgba(0, 212, 255, 0.1)',
+              borderColor: '#00d4ff',
+              borderWidth: 1,
+              borderType: 'dashed'
+            }
+          }
+        ]
+      }
+      trajectoryChartInstance.setOption(option)
     }
 
     // 加载数据
@@ -403,6 +538,7 @@ export default defineComponent({
       nextTick(() => {
         initTrendChart()
         initPieChart()
+        initTrajectoryChart()
       })
 
       // 模拟告警，30秒后触发一次
@@ -419,6 +555,9 @@ export default defineComponent({
       if (pieChartInstance) {
         pieChartInstance.dispose()
       }
+      if (trajectoryChartInstance) {
+        trajectoryChartInstance.dispose()
+      }
     })
 
     return {
@@ -432,8 +571,10 @@ export default defineComponent({
       alertDialogVisible,
       currentAlert,
       cameras,
+      electronicFences,
       trendChart,
       pieChart,
+      trajectoryChart,
       acknowledgeAlert,
       handleAlertClose,
       formatTime,
@@ -505,6 +646,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto;
 }
 
 .center-panel {
@@ -576,6 +718,89 @@ export default defineComponent({
 
 .chart {
   height: 200px;
+}
+
+.fence-panel {
+  flex-shrink: 0;
+}
+
+.fence-status {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fence-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.fence-info {
+  flex: 1;
+}
+
+.fence-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 3px;
+}
+
+.fence-area {
+  font-size: 12px;
+  color: #8fb5db;
+}
+
+.fence-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fence-indicator.active {
+  background: #4caf50;
+  color: #ffffff;
+}
+
+.fence-indicator.warning {
+  background: #ffa726;
+  color: #ffffff;
+}
+
+.fence-indicator.inactive {
+  background: #f44336;
+  color: #ffffff;
+}
+
+.fence-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.fence-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.trajectory-panel {
+  flex-shrink: 0;
+  height: 250px;
+}
+
+.trajectory-panel .chart {
+  height: 180px;
 }
 
 .video-panel {

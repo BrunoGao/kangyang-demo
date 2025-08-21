@@ -55,14 +55,45 @@ services:
       TZ: Asia/Shanghai
     ports:
       - "${AI_PORT:-5000}:5000"
+      - "${AI_TEST_PORT:-5558}:5558"  # 测试Web界面端口
     volumes:
       - ./ai-detection/logs:/app/logs
+      - ./ai-detection/test_results:/app/test_results  # 测试结果目录
       - ./videos:/app/videos:ro
+      - ./test_videos:/app/test_videos:ro  # 测试视频目录
     depends_on:
       redis:
         condition: service_healthy
     networks:
       - kangyang-network
+
+  # AI测试服务 (独立的测试容器)
+  ai-test:
+    build: 
+      context: ./ai-detection
+      dockerfile: Dockerfile
+    container_name: kangyang-ai-test
+    restart: "no"  # 测试完成后不重启
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FLASK_ENV: development
+      TZ: Asia/Shanghai
+    ports:
+      - "${AI_TEST_WEB_PORT:-5559}:5558"  # 独立测试Web界面
+    volumes:
+      - ./ai-detection/logs:/app/logs
+      - ./ai-detection/test_results:/app/test_results
+      - ./videos:/app/videos:ro
+      - ./test_videos:/app/test_videos:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["test-platform"]  # 启动测试平台
+    networks:
+      - kangyang-network
+    profiles:
+      - test  # 仅在test profile下启动
 
   # Spring Boot后端服务
   backend:

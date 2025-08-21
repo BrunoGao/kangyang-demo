@@ -36,12 +36,20 @@ COPY . .
 ENV PYTHONPATH=/app
 ENV FLASK_ENV=production
 
-# 暴露端口
-EXPOSE 5000
+# 创建测试结果目录
+RUN mkdir -p /app/test_results /app/test_videos
+
+# 暴露端口 (主应用5000, 测试Web界面5558)
+EXPOSE 5000 5558
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
+# 启动脚本
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # 启动应用
-CMD ["python", "app.py"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["app"]

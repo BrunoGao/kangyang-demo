@@ -484,7 +484,8 @@ export default defineComponent({
     }
 
     const openVideoTest = () => {
-      window.open('http://localhost:5557', '_blank')
+      const videoTestUrl = import.meta.env.VITE_VIDEO_TEST_URL || 'http://localhost:5557'
+      window.open(videoTestUrl, '_blank')
     }
 
     const exportReport = () => {
