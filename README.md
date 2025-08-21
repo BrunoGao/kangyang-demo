@@ -56,21 +56,26 @@
 
 ```
 📦 kangyang-demo
-├── 🤖 ai-detection/              # AI检测服务 (Python 3.12)
-│   ├── app/                     # 主应用目录
-│   │   ├── main.py              # FastAPI主应用
-│   │   ├── core/                # 核心模块
+├── 🤖 ai-detection/              # AI检测服务 (Python 3.12 + FastAPI)
+│   ├── app/                     # FastAPI应用目录
+│   │   ├── main.py              # FastAPI主应用入口
+│   │   ├── api/                 # API路由模块
+│   │   │   ├── detection.py     # 检测相关API
+│   │   │   └── wechat.py        # 微信通知API
+│   │   ├── core/                # 核心业务模块
 │   │   │   ├── video_processor.py    # 真实视频处理器
 │   │   │   ├── detectors.py          # 集成检测器
 │   │   │   └── wechat_notifier.py    # 微信通知模块
+│   │   ├── models/              # 数据模型 (Pydantic)
 │   │   ├── templates/           # HTML模板
-│   │   │   └── professional_platform.html  # 专业分析平台
-│   │   └── static/              # 静态文件
-│   ├── fall_detector.py         # 跌倒检测算法
-│   ├── fire_detector.py         # 火焰/烟雾检测算法  
-│   ├── test_framework.py        # 自动化测试框架
-│   ├── requirements.txt         # Python依赖
-│   └── Dockerfile              # Docker配置
+│   │   │   └── professional_platform.html  # 专业分析平台界面
+│   │   └── static/              # 静态资源文件
+│   ├── fall_detector.py         # 跌倒检测算法模块
+│   ├── fire_detector.py         # 火焰/烟雾检测算法模块
+│   ├── requirements.txt         # FastAPI + AI依赖
+│   ├── Dockerfile              # Docker生产配置
+│   ├── Dockerfile.lite         # Docker轻量配置
+│   └── venv/                   # Python虚拟环境
 ├── 🚀 backend/                   # 后端API (Spring Boot)
 │   ├── src/                    # 源代码
 │   ├── pom.xml                 # Maven配置
