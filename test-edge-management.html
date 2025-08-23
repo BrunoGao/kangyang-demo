@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>边缘设备管理功能测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .test-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .test-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .test-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .status-testing { background: #ffc107; }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stats-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .algorithm-tag {
+            display: inline-block;
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 2px;
+        }
+
+        .algorithm-tag.enabled {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .camera-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .camera-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            background: white;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 边缘设备管理功能测试</h1>
+            <p>测试康养AI检测系统边缘控制器的完整管理功能</p>
+        </div>
+
+        <div class="content">
+            <!-- 系统状态检测 -->
+            <div class="test-section">
+                <h2>🏥 系统状态检测</h2>
+                <div class="test-grid">
+                    <div class="test-card">
+                        <h3>服务健康检查</h3>
+                        <button class="test-button" onclick="testHealthCheck()">检查服务状态</button>
+                        <div class="result-area" id="health-result"></div>
+                    </div>
+                    
+                    <div class="test-card">
+                        <h3>系统配置</h3>
+                        <button class="test-button" onclick="testGetConfig()">获取系统配置</button>
+                        <div class="result-area" id="config-result"></div>
+                    </div>
+
+                    <div class="test-card">
+                        <h3>性能指标</h3>
+                        <button class="test-button" onclick="testPerformanceMetrics()">获取性能指标</button>
+                        <div class="result-area" id="performance-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 算法管理测试 -->
+            <div class="test-section">
+                <h2>🧠 AI算法管理</h2>
+                <div class="test-grid">
+                    <div class="test-card">
+                        <h3>算法列表</h3>
+                        <button class="test-button" onclick="testGetAlgorithms()">获取算法配置</button>
+                        <div class="result-area" id="algorithms-result"></div>
+                    </div>
+
+                    <div class="test-card">
+                        <h3>算法配置更新</h3>
+                        <div class="form-group">
+                            <label>算法名称:</label>
+                            <select id="algorithm-name">
+                                <option value="fall_detection">跌倒检测</option>
+                                <option value="fire_detection">火焰检测</option>
+                                <option value="smoke_detection">烟雾检测</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>置信度阈值:</label>
+                            <input type="range" id="confidence-threshold" min="0.1" max="1.0" step="0.05" value="0.8">
+                            <span id="confidence-value">0.8</span>
+                        </div>
+                        <button class="test-button" onclick="testUpdateAlgorithm()">更新算法配置</button>
+                        <div class="result-area" id="algorithm-update-result"></div>
+                    </div>
+
+                    <div class="test-card">
+                        <h3>算法重载</h3>
+                        <button class="test-button" onclick="testReloadAlgorithm('fall_detection')">重载跌倒检测</button>
+                        <button class="test-button" onclick="testReloadAlgorithm('fire_detection')">重载火焰检测</button>
+                        <div class="result-area" id="algorithm-reload-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 摄像头管理测试 -->
+            <div class="test-section">
+                <h2>📷 摄像头管理</h2>
+                <div class="test-grid">
+                    <div class="test-card">
+                        <h3>摄像头列表</h3>
+                        <button class="test-button" onclick="testGetCameras()">获取摄像头列表</button>
+                        <div class="camera-list" id="cameras-list"></div>
+                    </div>
+
+                    <div class="test-card">
+                        <h3>添加摄像头</h3>
+                        <div class="form-group">
+                            <label>摄像头ID:</label>
+                            <input type="text" id="camera-id" value="test_cam_001" placeholder="camera_001">
+                        </div>
+                        <div class="form-group">
+                            <label>摄像头名称:</label>
+                            <input type="text" id="camera-name" value="测试摄像头" placeholder="入口摄像头">
+                        </div>
+                        <div class="form-group">
+                            <label>RTSP地址:</label>
+                            <input type="text" id="camera-rtsp" value="rtsp://admin:password@192.168.1.100:554/stream" placeholder="RTSP URL">
+                        </div>
+                        <div class="form-group">
+                            <label>位置:</label>
+                            <input type="text" id="camera-location" value="测试区域" placeholder="一楼大厅">
+                        </div>
+                        <button class="test-button" onclick="testAddCamera()">添加摄像头</button>
+                        <div class="result-area" id="camera-add-result"></div>
+                    </div>
+
+                    <div class="test-card">
+                        <h3>摄像头控制</h3>
+                        <button class="test-button" onclick="testBatchCameraOperation('start')">批量启动摄像头</button>
+                        <button class="test-button" onclick="testBatchCameraOperation('stop')">批量停止摄像头</button>
+                        <button class="test-button" onclick="testUpdateMaxCameraCount()">调整最大摄像头数</button>
+                        <div class="result-area" id="camera-control-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 服务控制测试 -->
+            <div class="test-section">
+                <h2>⚙️ 服务控制</h2>
+                <div class="test-grid">
+                    <div class="test-card">
+                        <h3>服务状态</h3>
+                        <button class="test-button" onclick="testServiceStatus()">获取服务状态</button>
+                        <div class="result-area" id="service-status-result"></div>
+                    </div>
+
+                    <div class="test-card">
+                        <h3>服务控制</h3>
+                        <button class="test-button" onclick="testServiceRestart()">请求服务重启</button>
+                        <div class="result-area" id="service-control-result"></div>
+                    </div>
+
+                    <div class="test-card">
+                        <h3>系统信息</h3>
+                        <button class="test-button" onclick="testSystemStats()">获取系统统计</button>
+                        <div class="result-area" id="system-stats-result"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8084/api';
+        
+        // 工具函数
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${isError ? 'error' : ''}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        function setLoading(buttonElement, loading) {
+            if (loading) {
+                buttonElement.innerHTML = '<span class="loading"></span>正在测试...';
+                buttonElement.disabled = true;
+            } else {
+                buttonElement.innerHTML = buttonElement.innerHTML.replace(/<span class="loading"><\/span>正在测试\.\.\./, buttonElement.textContent);
+                buttonElement.disabled = false;
+            }
+        }
+
+        function formatJson(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            if (isError) {
+                element.textContent = `❌ 错误: ${data.message || data}`;
+                element.style.color = '#dc3545';
+            } else {
+                element.textContent = `✅ 成功:\n${formatJson(data)}`;
+                element.style.color = '#28a745';
+            }
+        }
+
+        async function apiCall(url, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${url}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `HTTP ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // 系统状态检测
+        async function testHealthCheck() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/health');
+                displayResult('health-result', data);
+                showToast('健康检查完成');
+            } catch (error) {
+                displayResult('health-result', error, true);
+                showToast('健康检查失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testGetConfig() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/config');
+                displayResult('config-result', data);
+                showToast('配置获取成功');
+            } catch (error) {
+                displayResult('config-result', error, true);
+                showToast('获取配置失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testPerformanceMetrics() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/performance/metrics');
+                displayResult('performance-result', data);
+                showToast('性能指标获取成功');
+            } catch (error) {
+                displayResult('performance-result', error, true);
+                showToast('获取性能指标失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        // 算法管理测试
+        async function testGetAlgorithms() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/algorithms');
+                displayResult('algorithms-result', data);
+                showToast('算法配置获取成功');
+            } catch (error) {
+                displayResult('algorithms-result', error, true);
+                showToast('获取算法配置失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testUpdateAlgorithm() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const algorithmName = document.getElementById('algorithm-name').value;
+                const threshold = parseFloat(document.getElementById('confidence-threshold').value);
+                
+                const data = await apiCall(`/algorithms/${algorithmName}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        algorithm_name: algorithmName,
+                        enabled: true,
+                        confidence_threshold: threshold,
+                        parameters: {}
+                    })
+                });
+                
+                displayResult('algorithm-update-result', data);
+                showToast('算法配置更新成功');
+            } catch (error) {
+                displayResult('algorithm-update-result', error, true);
+                showToast('更新算法配置失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testReloadAlgorithm(algorithmName) {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall(`/algorithms/${algorithmName}/reload`, {
+                    method: 'POST'
+                });
+                
+                displayResult('algorithm-reload-result', data);
+                showToast(`${algorithmName} 重载成功`);
+            } catch (error) {
+                displayResult('algorithm-reload-result', error, true);
+                showToast(`${algorithmName} 重载失败`, true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        // 摄像头管理测试
+        async function testGetCameras() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/cameras');
+                const camerasList = document.getElementById('cameras-list');
+                camerasList.innerHTML = '';
+                
+                if (data.cameras && data.cameras.length > 0) {
+                    data.cameras.forEach(camera => {
+                        const item = document.createElement('div');
+                        item.className = 'camera-item';
+                        item.innerHTML = `
+                            <div>
+                                <strong>${camera.name}</strong>
+                                <br><small>${camera.id} - ${camera.location}</small>
+                            </div>
+                            <span class="status-indicator ${camera.status === 'online' ? 'status-online' : 'status-offline'}"></span>
+                        `;
+                        camerasList.appendChild(item);
+                    });
+                } else {
+                    camerasList.innerHTML = '<p style="text-align: center; color: #6c757d;">暂无摄像头</p>';
+                }
+                
+                showToast(`获取到 ${data.total} 个摄像头`);
+            } catch (error) {
+                document.getElementById('cameras-list').innerHTML = `<p style="color: #dc3545;">错误: ${error.message}</p>`;
+                showToast('获取摄像头列表失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testAddCamera() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const cameraData = {
+                    id: document.getElementById('camera-id').value,
+                    name: document.getElementById('camera-name').value,
+                    rtsp_url: document.getElementById('camera-rtsp').value,
+                    location: document.getElementById('camera-location').value,
+                    zone_id: 'test_zone',
+                    enabled_algorithms: ['fall_detection']
+                };
+                
+                const data = await apiCall('/cameras', {
+                    method: 'POST',
+                    body: JSON.stringify(cameraData)
+                });
+                
+                displayResult('camera-add-result', data);
+                showToast('摄像头添加成功');
+                
+                // 刷新摄像头列表
+                setTimeout(() => testGetCameras(), 1000);
+            } catch (error) {
+                displayResult('camera-add-result', error, true);
+                showToast('添加摄像头失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testBatchCameraOperation(action) {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/cameras/batch', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        camera_ids: ['test_cam_001'],
+                        action: action
+                    })
+                });
+                
+                displayResult('camera-control-result', data);
+                showToast(`批量${action === 'start' ? '启动' : '停止'}操作完成`);
+            } catch (error) {
+                displayResult('camera-control-result', error, true);
+                showToast(`批量操作失败`, true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testUpdateMaxCameraCount() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/cameras/max-count/15', {
+                    method: 'PUT'
+                });
+                
+                displayResult('camera-control-result', data);
+                showToast('最大摄像头数量更新成功');
+            } catch (error) {
+                displayResult('camera-control-result', error, true);
+                showToast('更新失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        // 服务控制测试
+        async function testServiceStatus() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/service/status');
+                displayResult('service-status-result', data);
+                showToast('服务状态获取成功');
+            } catch (error) {
+                displayResult('service-status-result', error, true);
+                showToast('获取服务状态失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testServiceRestart() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/service/restart', {
+                    method: 'POST'
+                });
+                
+                displayResult('service-control-result', data);
+                showToast('重启请求已发送');
+            } catch (error) {
+                displayResult('service-control-result', error, true);
+                showToast('重启请求失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        async function testSystemStats() {
+            const button = event.target;
+            setLoading(button, true);
+            
+            try {
+                const data = await apiCall('/system/stats');
+                displayResult('system-stats-result', data);
+                showToast('系统统计获取成功');
+            } catch (error) {
+                displayResult('system-stats-result', error, true);
+                showToast('获取系统统计失败', true);
+            } finally {
+                setLoading(button, false);
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 置信度阈值滑块事件
+            const thresholdSlider = document.getElementById('confidence-threshold');
+            const thresholdValue = document.getElementById('confidence-value');
+            
+            thresholdSlider.addEventListener('input', function() {
+                thresholdValue.textContent = this.value;
+            });
+
+            // 自动加载基本信息
+            setTimeout(() => {
+                testHealthCheck();
+                testGetAlgorithms();
+                testGetCameras();
+            }, 500);
+            
+            showToast('边缘设备管理测试平台已就绪');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+services:
+  # 管理平台数据库
+  mysql:
+    image: mysql:8.0
+    container_name: kangyang-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
+      MYSQL_DATABASE: kangyang
+      MYSQL_USER: kangyang
+      MYSQL_PASSWORD: ${DB_PASSWORD:-123456}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./config/mysql:/etc/mysql/conf.d
+    restart: unless-stopped
+    networks:
+      - kangyang-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: kangyang-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    restart: unless-stopped
+    networks:
+      - kangyang-network
+
+  # 管理平台后端
+  management-backend:
+    build: ../management-platform/backend
+    container_name: kangyang-management-backend
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: kangyang
+      DB_PASSWORD: ${DB_PASSWORD:-123456}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      WECHAT_ENABLED: ${WECHAT_ENABLED:-true}
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
+      WECHAT_WEBHOOK_URL: ${WECHAT_WEBHOOK_URL:-}
+      WECHAT_USER_OPENID: ${WECHAT_USER_OPENID:-}
+      WECHAT_TEMPLATE_FALL: ${WECHAT_TEMPLATE_FALL:-}
+      WECHAT_TEMPLATE_FIRE: ${WECHAT_TEMPLATE_FIRE:-}
+      WECHAT_TEMPLATE_SMOKE: ${WECHAT_TEMPLATE_SMOKE:-}
+      EDGE_CONTROLLER_1_HOST: edge-controller-1
+      EDGE_CONTROLLER_1_PORT: 8084
+      EDGE_CONTROLLER_2_HOST: edge-controller-2
+      EDGE_CONTROLLER_2_PORT: 8084
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - redis
+    restart: unless-stopped
+    networks:
+      - kangyang-network
+    volumes:
+      - management_logs:/app/logs
+
+  # 管理平台前端
+  management-frontend:
+    build: ../management-platform/frontend/admin
+    container_name: kangyang-management-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - management-backend
+    restart: unless-stopped
+    networks:
+      - kangyang-network
+
+  # 边缘控制器 #1
+  edge-controller-1:
+    build: ../edge-controller
+    container_name: kangyang-edge-controller-1
+    environment:
+      CONTROLLER_ID: edge_controller_1
+      CONTROLLER_NAME: "边缘控制器#1"
+      MANAGEMENT_PLATFORM_URL: http://management-backend:8080/api
+      EDGE_API_KEY: ${EDGE_API_KEY:-default_key}
+    ports:
+      - "8084:8084"
+      - "9090:9090"  # Prometheus metrics
+    volumes:
+      - edge1_data:/data/edge-controller
+      - edge1_logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - kangyang-network
+    privileged: true  # 需要访问摄像头设备
+
+  # 边缘控制器 #2  
+  edge-controller-2:
+    build: ../edge-controller
+    container_name: kangyang-edge-controller-2
+    environment:
+      CONTROLLER_ID: edge_controller_2
+      CONTROLLER_NAME: "边缘控制器#2"
+      MANAGEMENT_PLATFORM_URL: http://management-backend:8080/api
+      EDGE_API_KEY: ${EDGE_API_KEY:-default_key}
+    ports:
+      - "8085:8084"
+      - "9091:9090"  # Prometheus metrics
+    volumes:
+      - edge2_data:/data/edge-controller
+      - edge2_logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - kangyang-network
+    privileged: true  # 需要访问摄像头设备
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  management_logs:
+    driver: local
+  edge1_data:
+    driver: local
+  edge2_data:
+    driver: local
+  edge1_logs:
+    driver: local
+  edge2_logs:
+    driver: local
+
+networks:
+  kangyang-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

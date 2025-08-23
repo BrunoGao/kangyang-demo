@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>边缘设备性能监控演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .demo-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .demo-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .demo-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .demo-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .demo-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .demo-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .status-testing { background: #ffc107; }
+
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 康养AI边缘设备性能监控演示</h1>
+            <p>测试全新的GPU、CPU、IO、网络、温度、磁盘监控功能</p>
+        </div>
+
+        <div class="content">
+            <!-- 实时监控演示 -->
+            <div class="demo-section">
+                <h2>📊 实时性能监控</h2>
+                <div class="demo-grid">
+                    <div class="demo-card">
+                        <h3>系统概览</h3>
+                        <button class="demo-button" onclick="getSystemMetrics()">获取实时指标</button>
+                        <div class="result-area" id="system-metrics"></div>
+                    </div>
+                    
+                    <div class="demo-card">
+                        <h3>详细监控数据</h3>
+                        <button class="demo-button" onclick="getDetailedMetrics()">获取详细数据</button>
+                        <div class="result-area" id="detailed-metrics"></div>
+                    </div>
+
+                    <div class="demo-card">
+                        <h3>历史数据</h3>
+                        <button class="demo-button" onclick="getHistoryData()">获取历史数据</button>
+                        <div class="result-area" id="history-data"></div>
+                    </div>
+                </div>
+
+                <!-- 实时数据显示 -->
+                <div class="stats-display" id="stats-display" style="display: none;">
+                    <div class="stat-item">
+                        <div class="stat-value" id="cpu-usage">0%</div>
+                        <div class="stat-label">CPU使用率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="memory-usage">0%</div>
+                        <div class="stat-label">内存使用率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="disk-usage">0%</div>
+                        <div class="stat-label">磁盘使用率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="temperature">N/A</div>
+                        <div class="stat-label">系统温度</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="network-speed">0 B/s</div>
+                        <div class="stat-label">网络速度</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="gpu-usage">N/A</div>
+                        <div class="stat-label">GPU使用率</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据生成器 -->
+            <div class="demo-section">
+                <h2>🔄 数据生成器</h2>
+                <div class="demo-grid">
+                    <div class="demo-card">
+                        <h3>生成测试数据</h3>
+                        <button class="demo-button" onclick="generateTestData()">生成10个数据点</button>
+                        <button class="demo-button" onclick="startContinuousMonitoring()">开始连续监控</button>
+                        <button class="demo-button" onclick="stopContinuousMonitoring()">停止监控</button>
+                        <div class="result-area" id="generation-log"></div>
+                    </div>
+
+                    <div class="demo-card">
+                        <h3>监控控制</h3>
+                        <div>
+                            <label>监控间隔: </label>
+                            <select id="monitoring-interval">
+                                <option value="1000">1秒</option>
+                                <option value="3000" selected>3秒</option>
+                                <option value="5000">5秒</option>
+                                <option value="10000">10秒</option>
+                            </select>
+                        </div>
+                        <br>
+                        <div class="result-area" id="monitoring-status">监控状态: 停止</div>
+                    </div>
+
+                    <div class="demo-card">
+                        <h3>快速链接</h3>
+                        <a href="http://localhost:3000/#/edge-devices" target="_blank" class="demo-button" style="display: inline-block; text-align: center; text-decoration: none;">
+                            打开图表界面
+                        </a>
+                        <a href="http://localhost:8084/docs" target="_blank" class="demo-button" style="display: inline-block; text-align: center; text-decoration: none;">
+                            API文档
+                        </a>
+                        <button class="demo-button" onclick="testAllAPIs()">测试所有API</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8084/api';
+        let monitoringTimer = null;
+        let dataPointCount = 0;
+
+        // 工具函数
+        function formatBytes(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatSpeed(bps) {
+            return formatBytes(bps) + '/s';
+        }
+
+        function displayResult(elementId, data, className = 'info') {
+            const element = document.getElementById(elementId);
+            if (typeof data === 'object') {
+                element.innerHTML = `<span class="${className}">✅ 成功:\n${JSON.stringify(data, null, 2)}</span>`;
+            } else {
+                element.innerHTML = `<span class="${className}">${data}</span>`;
+            }
+        }
+
+        function displayError(elementId, error) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<span class="error">❌ 错误: ${error}</span>`;
+        }
+
+        async function apiCall(url) {
+            try {
+                const response = await fetch(`${API_BASE}${url}`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `HTTP ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // 获取系统指标
+        async function getSystemMetrics() {
+            try {
+                const data = await apiCall('/performance/metrics');
+                
+                // 更新统计显示
+                updateStatsDisplay(data.system_metrics);
+                
+                // 显示概览信息
+                const overview = {
+                    timestamp: data.timestamp,
+                    cpu_percent: data.system_metrics.cpu.usage_percent,
+                    memory_percent: data.system_metrics.memory.virtual.percent,
+                    disk_usage: getDiskUsage(data.system_metrics.disk),
+                    network_speed: getNetworkSpeed(data.system_metrics.network),
+                    temperature: getTemperature(data.system_metrics.temperature),
+                    gpu_available: hasGPU(data.system_metrics.gpu)
+                };
+                
+                displayResult('system-metrics', overview);
+                document.getElementById('stats-display').style.display = 'grid';
+                
+            } catch (error) {
+                displayError('system-metrics', error.message);
+            }
+        }
+
+        // 获取详细指标
+        async function getDetailedMetrics() {
+            try {
+                const data = await apiCall('/performance/metrics');
+                
+                const detailed = {
+                    cpu_cores: data.system_metrics.cpu.per_core?.length || 0,
+                    memory_total: formatBytes(data.system_metrics.memory.virtual.total),
+                    disk_partitions: Object.keys(data.system_metrics.disk.usage || {}).length,
+                    network_interfaces: Object.keys(data.system_metrics.network.interfaces || {}).length,
+                    temperature_sensors: countTemperatureSensors(data.system_metrics.temperature),
+                    gpu_count: countGPUs(data.system_metrics.gpu)
+                };
+                
+                displayResult('detailed-metrics', detailed);
+                
+            } catch (error) {
+                displayError('detailed-metrics', error.message);
+            }
+        }
+
+        // 获取历史数据
+        async function getHistoryData() {
+            try {
+                const data = await apiCall('/performance/history?hours=1');
+                
+                const historyInfo = {
+                    total_records: data.statistics.total_records,
+                    earliest_record: data.statistics.earliest_record,
+                    latest_record: data.statistics.latest_record,
+                    data_points: data.history.timestamps.length,
+                    time_range: `${data.parameters.hours}小时`,
+                    records_by_type: data.statistics.records_by_type
+                };
+                
+                displayResult('history-data', historyInfo);
+                
+            } catch (error) {
+                displayError('history-data', error.message);
+            }
+        }
+
+        // 生成测试数据
+        async function generateTestData() {
+            try {
+                displayResult('generation-log', '开始生成测试数据...');
+                
+                for (let i = 1; i <= 10; i++) {
+                    const data = await apiCall('/performance/metrics');
+                    displayResult('generation-log', `生成第 ${i}/10 个数据点... CPU: ${data.system_metrics.cpu.usage_percent}%`);
+                    
+                    if (i < 10) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+                
+                displayResult('generation-log', '✅ 10个测试数据点生成完成！');
+                
+            } catch (error) {
+                displayError('generation-log', error.message);
+            }
+        }
+
+        // 开始连续监控
+        function startContinuousMonitoring() {
+            if (monitoringTimer) {
+                clearInterval(monitoringTimer);
+            }
+            
+            const interval = parseInt(document.getElementById('monitoring-interval').value);
+            dataPointCount = 0;
+            
+            monitoringTimer = setInterval(async () => {
+                try {
+                    dataPointCount++;
+                    await apiCall('/performance/metrics');
+                    
+                    document.getElementById('monitoring-status').innerHTML = 
+                        `<span class="success">监控状态: 运行中 (${dataPointCount}个数据点)</span>`;
+                        
+                    // 同时更新显示
+                    getSystemMetrics();
+                    
+                } catch (error) {
+                    document.getElementById('monitoring-status').innerHTML = 
+                        `<span class="error">监控错误: ${error.message}</span>`;
+                }
+            }, interval);
+            
+            document.getElementById('monitoring-status').innerHTML = 
+                `<span class="success">监控状态: 启动中...</span>`;
+        }
+
+        // 停止连续监控
+        function stopContinuousMonitoring() {
+            if (monitoringTimer) {
+                clearInterval(monitoringTimer);
+                monitoringTimer = null;
+            }
+            
+            document.getElementById('monitoring-status').innerHTML = 
+                `<span class="info">监控状态: 已停止 (共生成 ${dataPointCount} 个数据点)</span>`;
+        }
+
+        // 测试所有API
+        async function testAllAPIs() {
+            const apis = [
+                '/health',
+                '/performance/metrics',
+                '/performance/history',
+                '/algorithms',
+                '/cameras',
+                '/service/status'
+            ];
+            
+            let results = '=== API测试结果 ===\n\n';
+            
+            for (const api of apis) {
+                try {
+                    const startTime = Date.now();
+                    const data = await apiCall(api);
+                    const endTime = Date.now();
+                    
+                    results += `✅ ${api}: 成功 (${endTime - startTime}ms)\n`;
+                    if (data.success !== undefined) {
+                        results += `   状态: ${data.success ? '成功' : '失败'}\n`;
+                    }
+                    results += '\n';
+                    
+                } catch (error) {
+                    results += `❌ ${api}: 失败 - ${error.message}\n\n`;
+                }
+            }
+            
+            displayResult('generation-log', results);
+        }
+
+        // 更新统计显示
+        function updateStatsDisplay(metrics) {
+            document.getElementById('cpu-usage').textContent = (metrics.cpu.usage_percent || 0) + '%';
+            document.getElementById('memory-usage').textContent = Math.round(metrics.memory.virtual.percent || 0) + '%';
+            document.getElementById('disk-usage').textContent = getDiskUsage(metrics.disk) + '%';
+            document.getElementById('temperature').textContent = getTemperature(metrics.temperature);
+            document.getElementById('network-speed').textContent = getNetworkSpeed(metrics.network);
+            document.getElementById('gpu-usage').textContent = getGPUUsage(metrics.gpu);
+        }
+
+        // 辅助函数
+        function getDiskUsage(disk) {
+            const usage = disk.usage;
+            if (!usage) return 0;
+            const firstDisk = Object.values(usage)[0];
+            return Math.round(firstDisk?.percent || 0);
+        }
+
+        function getNetworkSpeed(network) {
+            const io = network.io;
+            if (!io) return '0 B/s';
+            const total = (io.bytes_recv_per_sec || 0) + (io.bytes_sent_per_sec || 0);
+            return formatSpeed(total);
+        }
+
+        function getTemperature(temperature) {
+            if (!temperature || temperature.message || temperature.error) return 'N/A';
+            
+            for (const sensorGroup of Object.values(temperature)) {
+                if (Array.isArray(sensorGroup)) {
+                    for (const sensor of sensorGroup) {
+                        if (sensor.current && sensor.current > 0) {
+                            return Math.round(sensor.current) + '°C';
+                        }
+                    }
+                }
+            }
+            return 'N/A';
+        }
+
+        function hasGPU(gpu) {
+            return gpu && typeof gpu === 'object' && !gpu.message && !gpu.error;
+        }
+
+        function getGPUUsage(gpu) {
+            if (!hasGPU(gpu)) return 'N/A';
+            const firstGPU = Object.values(gpu)[0];
+            return (firstGPU?.utilization?.gpu || 0) + '%';
+        }
+
+        function countTemperatureSensors(temperature) {
+            if (!temperature || temperature.message) return 0;
+            let count = 0;
+            for (const sensorGroup of Object.values(temperature)) {
+                if (Array.isArray(sensorGroup)) {
+                    count += sensorGroup.length;
+                }
+            }
+            return count;
+        }
+
+        function countGPUs(gpu) {
+            if (!hasGPU(gpu)) return 0;
+            return Object.keys(gpu).length;
+        }
+
+        // 页面加载完成后自动获取一次系统指标
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                getSystemMetrics();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

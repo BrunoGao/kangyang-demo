@@ -1,0 +1,78 @@
+# 边缘控制器配置文件
+edge_controller:
+  id: "edge_controller_1"
+  name: "边缘控制器#1"
+  location: "康养中心机房"
+  
+# 服务配置
+server:
+  host: "0.0.0.0"
+  port: 8084
+  workers: 4
+  log_level: "INFO"
+
+# 摄像头配置
+cameras:
+  max_cameras: 11  # 每个边缘控制器最多11路
+  rtsp_timeout: 10
+  reconnect_interval: 5
+  max_reconnect_attempts: 3
+  frame_rate: 8  # 8-12 FPS 减负
+
+# AI检测配置
+detection:
+  algorithms:
+    fall_detection:
+      enabled: true
+      confidence_threshold: 0.8
+      min_fall_duration: 3.0  # 持续3秒才报警
+      cooldown_period: 30     # 冷却30秒
+    fire_detection:
+      enabled: true
+      confidence_threshold: 0.85
+      cooldown_period: 10
+    smoke_detection:
+      enabled: true
+      confidence_threshold: 0.80
+      cooldown_period: 15
+  
+  # 处理配置
+  batch_size: 4
+  max_queue_size: 100
+  process_interval: 0.04  # 25 FPS
+
+# 管理平台通信
+management_platform:
+  api_url: "http://management-platform:8080/api"
+  websocket_url: "ws://management-platform:8080/ws"
+  heartbeat_interval: 10
+  event_batch_size: 10
+  retry_attempts: 3
+
+# 本地存储
+storage:
+  base_path: "/data/edge-controller"
+  snapshots_path: "/data/edge-controller/snapshots"
+  videos_path: "/data/edge-controller/videos"
+  max_storage_gb: 50
+  retention_days: 7
+
+# 监控配置
+monitoring:
+  enable_metrics: true
+  metrics_port: 9090
+  health_check_interval: 30
+
+# 安全配置
+security:
+  api_key: "${EDGE_API_KEY}"
+  encrypt_communication: true
+  max_failed_attempts: 5
+
+# 性能优化
+performance:
+  use_gpu: false  # 设为true启用GPU加速
+  cpu_threads: 8
+  memory_limit_gb: 16
+  enable_frame_skip: true
+  skip_frame_interval: 2

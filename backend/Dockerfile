@@ -3,6 +3,10 @@ FROM maven:3.8.4-openjdk-11-slim AS builder
 
 WORKDIR /app
 
+# 创建Maven配置目录并复制配置文件
+RUN mkdir -p /root/.m2
+COPY settings.xml /root/.m2/settings.xml
+
 # 复制pom.xml和src目录
 COPY pom.xml .
 COPY src ./src

@@ -1,0 +1,61 @@
+# Docker构建优化 - 排除不必要的文件
+
+# 开发和测试文件
+*.md
+*.rst
+*.txt.bak
+build-test.sh
+test_imports.py
+start-simple.sh
+Dockerfile.*
+
+# Python缓存和虚拟环境
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+venv/
+env/
+ENV/
+# 确保排除虚拟环境
+venv
+.venv
+env
+.env
+
+# 版本控制
+.git/
+.gitignore
+.gitattributes
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+.tmp/
+*.tmp
+*.temp
+
+# 测试数据
+test_data/
+test_results/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 部署相关
+deployment/
+docker-compose*

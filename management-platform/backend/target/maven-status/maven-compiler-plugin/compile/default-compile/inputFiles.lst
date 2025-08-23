@@ -1,0 +1,16 @@
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/service/FallEventService.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/service/EdgeDeviceService.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/config/WebSocketConfig.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/controller/EdgeDeviceController.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/repository/EdgeDeviceRepository.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/repository/FallEventRepository.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/entity/EdgeDevice.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/FallDetectionApplication.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/controller/FallEventController.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/controller/EdgeController.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/controller/WechatController.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/service/WechatService.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/repository/CameraRepository.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/entity/FallEvent.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/service/EdgeManagementService.java
+/Users/brunogao/work/codes/kangyang/kangyang-demo/management-platform/backend/src/main/java/com/kangyang/entity/Camera.java

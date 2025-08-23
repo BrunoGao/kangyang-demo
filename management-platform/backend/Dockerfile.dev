@@ -1,0 +1,38 @@
+# 开发环境Dockerfile
+FROM openjdk:11-jdk-slim
+
+WORKDIR /app
+
+# 安装开发工具
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    netcat \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装Maven
+RUN wget https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz && \
+    tar xzf apache-maven-3.8.4-bin.tar.gz -C /opt && \
+    ln -s /opt/apache-maven-3.8.4 /opt/maven && \
+    rm apache-maven-3.8.4-bin.tar.gz
+
+ENV PATH="/opt/maven/bin:${PATH}"
+ENV MAVEN_HOME="/opt/maven"
+
+# 复制项目文件
+COPY pom.xml .
+COPY src ./src
+
+# 下载依赖
+RUN mvn dependency:resolve
+
+# 设置环境变量
+ENV JAVA_OPTS="-Xmx256m -Xms128m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000"
+ENV SPRING_PROFILES_ACTIVE=dev
+
+# 暴露端口
+EXPOSE 8080 8000 35729
+
+# 开发模式启动命令
+CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000"]

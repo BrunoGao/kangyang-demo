@@ -1,0 +1,214 @@
+{
+  "video_info": {
+    "filename": "falldown.mp4",
+    "duration": 372.9003125,
+    "fps": 29.999974859232655,
+    "total_frames": 11187,
+    "resolution": "1280x720",
+    "processed_frames": 150,
+    "frame_skip": 14,
+    "file_size_mb": 85.49955749511719
+  },
+  "algorithms_used": [
+    "fall_detection"
+  ],
+  "detection_summary": {
+    "total_detections": 5,
+    "frames_with_detections": 5,
+    "detection_rate": 0.03333333333333333,
+    "analysis_coverage": 0.013408420488066506
+  },
+  "detailed_results": [
+    {
+      "algorithm": "fall_detection",
+      "type": "fall",
+      "confidence": 0.8878042389662439,
+      "timestamp": 13.53334467462233,
+      "frame_index": 406,
+      "location": "区域 A",
+      "bbox": [
+        0.34897870915191925,
+        0.2751993948226003,
+        0.6895815592331089,
+        0.5139518127096193
+      ],
+      "severity": "high"
+    },
+    {
+      "algorithm": "fall_detection",
+      "type": "fall",
+      "confidence": 0.9355016101002779,
+      "timestamp": 15.866679963350316,
+      "frame_index": 476,
+      "location": "区域 A",
+      "bbox": [
+        0.4531676071420073,
+        0.3163138868490199,
+        0.787048771904209,
+        0.5883641945296323
+      ],
+      "severity": "high"
+    },
+    {
+      "algorithm": "fall_detection",
+      "type": "fall",
+      "confidence": 0.9546326528476917,
+      "timestamp": 25.666688176007867,
+      "frame_index": 770,
+      "location": "区域 A",
+      "bbox": [
+        0.40631673436304405,
+        0.3497594066619196,
+        0.6200336247663446,
+        0.6671752137693955
+      ],
+      "severity": "high"
+    },
+    {
+      "algorithm": "fall_detection",
+      "type": "fall",
+      "confidence": 0.8711641432140541,
+      "timestamp": 28.46669052248145,
+      "frame_index": 854,
+      "location": "区域 A",
+      "bbox": [
+        0.36127038820707635,
+        0.2596595226191478,
+        0.6569265990856502,
+        0.6137020072887963
+      ],
+      "severity": "high"
+    },
+    {
+      "algorithm": "fall_detection",
+      "type": "fall",
+      "confidence": 0.9268952210510686,
+      "timestamp": 62.06671868016448,
+      "frame_index": 1862,
+      "location": "区域 A",
+      "bbox": [
+        0.354599711472451,
+        0.24059820431108792,
+        0.6575595998443856,
+        0.5405736089061337
+      ],
+      "severity": "high"
+    }
+  ],
+  "algorithm_statistics": {
+    "fall_detection": {
+      "total_detections": 5,
+      "avg_confidence": 0.9151995732358673,
+      "max_confidence": 0.9546326528476917,
+      "detection_frames": [
+        406,
+        476,
+        770,
+        854,
+        1862
+      ]
+    }
+  },
+  "frame_results": {
+    "406": [
+      {
+        "algorithm": "fall_detection",
+        "type": "fall",
+        "confidence": 0.8878042389662439,
+        "timestamp": 13.53334467462233,
+        "frame_index": 406,
+        "location": "区域 A",
+        "bbox": [
+          0.34897870915191925,
+          0.2751993948226003,
+          0.6895815592331089,
+          0.5139518127096193
+        ],
+        "severity": "high"
+      }
+    ],
+    "476": [
+      {
+        "algorithm": "fall_detection",
+        "type": "fall",
+        "confidence": 0.9355016101002779,
+        "timestamp": 15.866679963350316,
+        "frame_index": 476,
+        "location": "区域 A",
+        "bbox": [
+          0.4531676071420073,
+          0.3163138868490199,
+          0.787048771904209,
+          0.5883641945296323
+        ],
+        "severity": "high"
+      }
+    ],
+    "770": [
+      {
+        "algorithm": "fall_detection",
+        "type": "fall",
+        "confidence": 0.9546326528476917,
+        "timestamp": 25.666688176007867,
+        "frame_index": 770,
+        "location": "区域 A",
+        "bbox": [
+          0.40631673436304405,
+          0.3497594066619196,
+          0.6200336247663446,
+          0.6671752137693955
+        ],
+        "severity": "high"
+      }
+    ],
+    "854": [
+      {
+        "algorithm": "fall_detection",
+        "type": "fall",
+        "confidence": 0.8711641432140541,
+        "timestamp": 28.46669052248145,
+        "frame_index": 854,
+        "location": "区域 A",
+        "bbox": [
+          0.36127038820707635,
+          0.2596595226191478,
+          0.6569265990856502,
+          0.6137020072887963
+        ],
+        "severity": "high"
+      }
+    ],
+    "1862": [
+      {
+        "algorithm": "fall_detection",
+        "type": "fall",
+        "confidence": 0.9268952210510686,
+        "timestamp": 62.06671868016448,
+        "frame_index": 1862,
+        "location": "区域 A",
+        "bbox": [
+          0.354599711472451,
+          0.24059820431108792,
+          0.6575595998443856,
+          0.5405736089061337
+        ],
+        "severity": "high"
+      }
+    ]
+  },
+  "processing_info": {
+    "processing_time": "2025-08-23T18:38:22.463705",
+    "system": "康养AI检测系统",
+    "version": "1.0.0",
+    "mode": "demo_analysis"
+  },
+  "performance_metrics": {
+    "frames_per_second_processed": 5.631531885616213,
+    "detection_density": 0.013408409251467173,
+    "confidence_distribution": {
+      "high_confidence": 3,
+      "medium_confidence": 2,
+      "low_confidence": 0
+    }
+  }
+}
