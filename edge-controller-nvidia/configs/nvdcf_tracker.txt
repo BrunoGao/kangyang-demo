@@ -1,0 +1,144 @@
+# NvDCF Tracker配置文件
+# 针对康养场景优化的跟踪器参数
+
+################################################################################
+# 基础跟踪参数
+################################################################################
+[tracker]
+# 跟踪器ID
+tracker-id=1
+
+# 跟踪算法类型  
+tracker-type=NvDCF
+
+# GPU设备ID
+gpu-id=0
+
+# 跟踪器分辨率 (降低以提升性能)
+tracker-width=960
+tracker-height=544
+
+# 最大跟踪目标数(每路最多5个人)
+max-targets-per-stream=5
+
+# 跟踪器内存类型
+tracker-memory-type=0
+
+################################################################################
+# NvDCF算法参数
+################################################################################
+[NvDCF]
+# 特征维度
+feature-dim=512
+
+# 相关滤波器配置
+filter-lr=0.15               # 学习率 (康养场景人员移动较慢，可适当降低)
+filter-channelweights=0.25
+filter-reg=1e-4
+
+# 搜索区域配置  
+search-region-ratio=2.0      # 搜索区域比例
+
+# 目标更新配置
+max-template-size=100        # 模板最大尺寸
+template-update-rate=0.8     # 模板更新率
+
+# 跟踪质量阈值
+track-quality-threshold=0.7  # 跟踪质量阈值
+detection-confidence-threshold=0.8
+
+################################################################################
+# 目标生命周期管理
+################################################################################
+[target-management]
+# 新目标确认帧数
+min-detector-confidence=0.8  # 最小检测置信度
+probationary-drop-count=3    # 试用期丢失帧数
+max-shadow-tracking-age=30   # 最大阴影跟踪年龄
+
+# 目标删除条件
+max-unmatched-frames=10      # 最大未匹配帧数
+tracker-algo-iou-threshold=0.3 # IOU阈值
+
+# 重新识别配置  
+enable-past-frame=1          # 启用历史帧
+past-frame-output-age=10     # 历史帧输出年龄
+
+################################################################################
+# 康养场景特定优化
+################################################################################
+[healthcare-optimization]
+# 老人跌倒检测优化
+fall-detection-mode=1        # 启用跌倒检测模式
+fall-velocity-threshold=5.0  # 跌倒速度阈值(像素/帧)
+fall-angle-threshold=45      # 跌倒角度阈值(度)
+
+# 长时间静止检测
+stationary-threshold=30      # 静止帧数阈值
+stationary-pixel-threshold=10 # 静止像素阈值
+
+# 区域约束
+enable-roi-filtering=1       # 启用ROI过滤
+roi-confidence-boost=0.2     # ROI内置信度提升
+
+################################################################################
+# 性能优化参数  
+################################################################################
+[performance]
+# 计算优化
+compute-mode=0               # 0=DEFAULT, 1=FAST, 2=ACCURATE
+enable-batch-process=1       # 启用批处理
+batch-size=22                # 批处理大小
+
+# 内存优化
+pre-allocated-buffers=50     # 预分配缓冲区数量
+buffer-pool-size=100         # 缓冲池大小
+
+# 多线程配置
+num-transform-threads=4      # 变换线程数
+num-dcf-threads=2            # DCF线程数
+
+################################################################################
+# 调试和日志
+################################################################################
+[debug]
+enable-debug=0               # 生产环境禁用调试
+debug-level=2                # 调试级别
+debug-color-mode=0
+verbose=0
+
+# 性能统计
+enable-perf-measurement=1    # 启用性能测量
+perf-measurement-interval=5  # 性能测量间隔(秒)
+
+################################################################################
+# 数据关联参数
+################################################################################
+[data-association]
+# 匈牙利算法参数
+assignment-threshold=0.8     # 分配阈值
+gate-threshold=0.9           # 门限阈值
+
+# 卡尔曼滤波参数
+process-noise-cov=1e-2       # 过程噪声协方差
+measurement-noise-cov=1e-1   # 测量噪声协方差
+
+# 运动模型
+motion-model=0               # 0=恒速模型, 1=恒加速模型
+max-velocity=50              # 最大速度(像素/帧)
+
+################################################################################
+# 外观特征配置
+################################################################################  
+[appearance]
+# 特征提取
+feature-extraction-interval=5 # 特征提取间隔
+feature-history-size=10      # 特征历史大小
+
+# 相似度计算
+similarity-threshold=0.6     # 相似度阈值
+cosine-distance-threshold=0.4 # 余弦距离阈值
+
+# 年龄管理
+feature-max-age=100          # 特征最大年龄
+feature-update-rate=0.1      # 特征更新率

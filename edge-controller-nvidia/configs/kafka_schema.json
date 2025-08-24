@@ -1,0 +1,384 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "康养AI检测事件Schema",
+  "description": "NVIDIA DeepStream输出的标准化事件消息格式",
+  "type": "object",
+  "required": [
+    "messageid",
+    "mdsversion", 
+    "timestamp",
+    "sensorId",
+    "objects"
+  ],
+  "properties": {
+    "messageid": {
+      "type": "string",
+      "description": "消息唯一标识符",
+      "example": "msg_001_1640995200000"
+    },
+    "mdsversion": {
+      "type": "string", 
+      "description": "消息数据结构版本",
+      "enum": ["1.0"],
+      "default": "1.0"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time", 
+      "description": "事件时间戳(ISO 8601格式)",
+      "example": "2023-12-31T23:59:59.999Z"
+    },
+    "@timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "消息生成时间戳"
+    },
+    "sensorId": {
+      "type": "string",
+      "description": "传感器(摄像头)标识",
+      "pattern": "^camera_[0-9]{3}$",
+      "example": "camera_001"
+    },
+    "objects": {
+      "type": "array",
+      "description": "检测到的对象列表",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/definitions/DetectedObject"
+      }
+    },
+    "analyticsModule": {
+      "type": "object",
+      "description": "分析模块信息",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "分析模块ID",
+          "example": "deepstream_kangyang"
+        },
+        "description": {
+          "type": "string",
+          "description": "分析模块描述",
+          "example": "康养AI检测系统-NVIDIA优化版"
+        },
+        "source": {
+          "type": "string", 
+          "description": "处理源信息",
+          "example": "DeepStream-6.4"
+        },
+        "version": {
+          "type": "string",
+          "description": "模块版本",
+          "example": "2.0.0-nvidia"
+        }
+      }
+    },
+    "place": {
+      "type": "object",
+      "description": "位置信息",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "位置ID",
+          "example": "room_101"
+        },
+        "name": {
+          "type": "string",
+          "description": "位置名称",
+          "example": "客房101"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["bedroom", "bathroom", "corridor", "lobby", "dining", "garden", "stairs"],
+          "description": "区域类型"
+        },
+        "coordinate": {
+          "type": "object",
+          "properties": {
+            "x": {"type": "number"},
+            "y": {"type": "number"}, 
+            "z": {"type": "number"}
+          }
+        }
+      }
+    },
+    "videoPath": {
+      "type": "string",
+      "description": "关联视频文件路径(可选)",
+      "example": "/data/videos/camera_001_20231231_235959.mp4"
+    }
+  },
+  "definitions": {
+    "DetectedObject": {
+      "type": "object",
+      "required": ["id", "object", "confidence"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "对象唯一标识",
+          "example": "person_001"
+        },
+        "object": {
+          "$ref": "#/definitions/ObjectInfo"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "检测置信度",
+          "example": 0.85
+        },
+        "rect_params": {
+          "$ref": "#/definitions/BoundingBox"
+        },
+        "tracker": {
+          "$ref": "#/definitions/TrackerInfo"
+        }
+      }
+    },
+    "ObjectInfo": {
+      "type": "object",
+      "required": ["class_id", "class_name"],
+      "properties": {
+        "class_id": {
+          "type": "integer",
+          "description": "对象类别ID",
+          "example": 0
+        },
+        "class_name": {
+          "type": "string",
+          "enum": ["person", "fall", "fire", "smoke"],
+          "description": "对象类别名称",
+          "example": "fall"
+        },
+        "sub_class": {
+          "type": "string",
+          "enum": [
+            "fall_forward", "fall_backward", "fall_sideways", "fall_sitting",
+            "small_fire", "large_fire", "flame",
+            "white_smoke", "gray_smoke", "dense_smoke", "light_smoke"
+          ],
+          "description": "子类别(可选)",
+          "example": "fall_forward"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "事件严重程度",
+          "example": "high"
+        }
+      }
+    },
+    "BoundingBox": {
+      "type": "object",
+      "required": ["left", "top", "width", "height"],
+      "properties": {
+        "left": {
+          "type": "number",
+          "minimum": 0,
+          "description": "边界框左上角X坐标",
+          "example": 320.5
+        },
+        "top": {
+          "type": "number", 
+          "minimum": 0,
+          "description": "边界框左上角Y坐标",
+          "example": 240.2
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "description": "边界框宽度",
+          "example": 150.8
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0, 
+          "description": "边界框高度",
+          "example": 200.4
+        }
+      }
+    },
+    "TrackerInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "跟踪器分配的对象ID",
+          "example": 12
+        },
+        "age": {
+          "type": "integer",
+          "description": "跟踪年龄(帧数)",
+          "example": 45
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "跟踪置信度",
+          "example": 0.92
+        },
+        "state": {
+          "type": "string",
+          "enum": ["new", "tracked", "lost", "deleted"],
+          "description": "跟踪状态",
+          "example": "tracked"
+        },
+        "velocity": {
+          "type": "object",
+          "properties": {
+            "x": {"type": "number"},
+            "y": {"type": "number"},
+            "magnitude": {"type": "number"}
+          },
+          "description": "运动速度(像素/秒)"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "messageid": "fall_event_001_1703980799000",
+      "mdsversion": "1.0", 
+      "timestamp": "2023-12-30T15:59:59.000Z",
+      "@timestamp": "2023-12-30T15:59:59.123Z",
+      "sensorId": "camera_001",
+      "objects": [
+        {
+          "id": "person_001_fall",
+          "object": {
+            "class_id": 1,
+            "class_name": "fall",
+            "sub_class": "fall_forward",
+            "severity": "high"
+          },
+          "confidence": 0.88,
+          "rect_params": {
+            "left": 320.5,
+            "top": 180.2,
+            "width": 180.0,
+            "height": 240.5
+          },
+          "tracker": {
+            "id": 7,
+            "age": 23,
+            "confidence": 0.91,
+            "state": "tracked",
+            "velocity": {
+              "x": 12.3,
+              "y": 45.7,
+              "magnitude": 47.4
+            }
+          }
+        }
+      ],
+      "analyticsModule": {
+        "id": "deepstream_kangyang",
+        "description": "康养AI检测系统-NVIDIA优化版",
+        "source": "DeepStream-6.4",
+        "version": "2.0.0-nvidia"
+      },
+      "place": {
+        "id": "room_101",
+        "name": "客房101", 
+        "type": "bedroom",
+        "coordinate": {
+          "x": 120.5,
+          "y": 80.3,
+          "z": 0
+        }
+      },
+      "videoPath": "/data/videos/camera_001_20231230_155959.mp4"
+    },
+    {
+      "messageid": "fire_event_001_1703980800000",
+      "mdsversion": "1.0",
+      "timestamp": "2023-12-30T16:00:00.000Z", 
+      "@timestamp": "2023-12-30T16:00:00.456Z",
+      "sensorId": "camera_003",
+      "objects": [
+        {
+          "id": "fire_001",
+          "object": {
+            "class_id": 2,
+            "class_name": "fire", 
+            "sub_class": "small_fire",
+            "severity": "critical"
+          },
+          "confidence": 0.94,
+          "rect_params": {
+            "left": 450.2,
+            "top": 280.8,
+            "width": 85.5,
+            "height": 120.3
+          },
+          "tracker": {
+            "id": 3,
+            "age": 12,
+            "confidence": 0.89,
+            "state": "new"
+          }
+        }
+      ],
+      "analyticsModule": {
+        "id": "deepstream_kangyang",
+        "description": "康养AI检测系统-NVIDIA优化版",
+        "source": "DeepStream-6.4", 
+        "version": "2.0.0-nvidia"
+      },
+      "place": {
+        "id": "kitchen_001",
+        "name": "厨房",
+        "type": "dining"
+      }
+    },
+    {
+      "messageid": "smoke_event_001_1703980801000", 
+      "mdsversion": "1.0",
+      "timestamp": "2023-12-30T16:00:01.000Z",
+      "@timestamp": "2023-12-30T16:00:01.789Z",
+      "sensorId": "camera_005",
+      "objects": [
+        {
+          "id": "smoke_001",
+          "object": {
+            "class_id": 3,
+            "class_name": "smoke",
+            "sub_class": "light_smoke", 
+            "severity": "medium"
+          },
+          "confidence": 0.76,
+          "rect_params": {
+            "left": 200.0,
+            "top": 50.5,
+            "width": 300.8,
+            "height": 180.2
+          },
+          "tracker": {
+            "id": 15,
+            "age": 8,
+            "confidence": 0.72,
+            "state": "tracked",
+            "velocity": {
+              "x": -5.2,
+              "y": -18.7,
+              "magnitude": 19.4
+            }
+          }
+        }
+      ],
+      "analyticsModule": {
+        "id": "deepstream_kangyang",
+        "description": "康养AI检测系统-NVIDIA优化版",
+        "source": "DeepStream-6.4",
+        "version": "2.0.0-nvidia" 
+      },
+      "place": {
+        "id": "corridor_002",
+        "name": "二楼走廊",
+        "type": "corridor"
+      }
+    }
+  ]
+}

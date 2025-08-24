@@ -1,0 +1,315 @@
+version: '3.9'
+
+# 康养AI检测系统 - NVIDIA L4优化版
+# 基于DeepStream 6.4的高性能边缘推理
+
+services:
+  
+  ################################################################################
+  # DeepStream边缘推理服务
+  ################################################################################
+  deepstream-edge:
+    image: nvcr.io/nvidia/deepstream:6.4-triton-multiarch
+    container_name: deepstream-kangyang
+    hostname: deepstream-edge
+    
+    # NVIDIA Runtime配置
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - TZ=Asia/Shanghai
+      
+      # CUDA配置
+      - CUDA_CACHE_DISABLE=0
+      - CUDA_CACHE_MAXSIZE=2147483648
+      
+      # DeepStream配置
+      - DS_NEW_BUFAPI=1
+      - DS_VERSION=6.4
+      
+      # Kafka配置
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=edge-events
+      
+      # 性能优化
+      - OMP_NUM_THREADS=8
+      - GOMP_CPU_AFFINITY=0-7
+      
+    # 网络配置
+    network_mode: host
+    
+    # 资源限制
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+              
+    # 卷挂载
+    volumes:
+      - ./configs:/opt/nvidia/deepstream/deepstream/configs:ro
+      - ./models:/opt/nvidia/deepstream/deepstream/models:ro
+      - ./tracker:/opt/nvidia/deepstream/deepstream/tracker:ro
+      - ./lib:/opt/nvidia/deepstream/deepstream/lib:ro
+      - ./labels:/opt/nvidia/deepstream/deepstream/labels:ro
+      - ./logs:/var/log/deepstream
+      - ./data:/data
+      - ./payloads:/payloads
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      
+    # 启动命令
+    command: >
+      deepstream-app 
+      -c /opt/nvidia/deepstream/deepstream/configs/deepstream_app.txt
+      
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      
+    # 重启策略
+    restart: unless-stopped
+    
+    # 依赖服务
+    depends_on:
+      - kafka
+      - redis
+
+  ################################################################################
+  # GPU监控服务 (DCGM Exporter)
+  ################################################################################
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.8-3.1.5-ubuntu20.04
+    container_name: dcgm-exporter
+    
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - DCGM_EXPORTER_LISTEN=:9400
+      - DCGM_EXPORTER_KUBERNETES=false
+      
+    ports:
+      - "9400:9400"
+      
+    volumes:
+      - ./monitoring/dcgm-exporter.csv:/etc/dcgm-exporter/default-counters.csv:ro
+      
+    cap_add:
+      - SYS_ADMIN
+      
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9400/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ################################################################################  
+  # Kafka消息代理
+  ################################################################################
+  kafka:
+    image: confluentinc/cp-kafka:7.4.1
+    container_name: kafka-edge
+    hostname: kafka
+    
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_MESSAGE_MAX_BYTES: 1048576
+      
+    ports:
+      - "9092:9092"
+      
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+      
+    depends_on:
+      - zookeeper
+      
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:29092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  ################################################################################
+  # Zookeeper服务
+  ################################################################################
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.1
+    container_name: zookeeper-edge
+    hostname: zookeeper
+    
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+      
+    ports:
+      - "2181:2181"
+      
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+      
+    restart: unless-stopped
+
+  ################################################################################
+  # Redis缓存服务  
+  ################################################################################
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis-edge
+    hostname: redis
+    
+    command: >
+      redis-server 
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+      
+    ports:
+      - "6379:6379"
+      
+    volumes:
+      - redis_data:/data
+      
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ################################################################################
+  # 事件路由服务
+  ################################################################################
+  event-router:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.event-router
+    container_name: event-router
+    
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - REDIS_URL=redis://redis:6379/0
+      - TOPIC_EVENTS=edge-events
+      - TOPIC_ALERTS=edge-alerts
+      - LOG_LEVEL=INFO
+      
+    volumes:
+      - ./configs/rules.yaml:/app/rules.yaml:ro
+      - ./logs:/var/log/event-router
+      - ./data:/data
+      
+    depends_on:
+      - kafka
+      - redis
+      
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ################################################################################
+  # Prometheus监控
+  ################################################################################  
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus-edge
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=7d'
+      
+    ports:
+      - "9090:9090"
+      
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+      
+    depends_on:
+      - dcgm-exporter
+      
+    restart: unless-stopped
+
+  ################################################################################
+  # Grafana可视化
+  ################################################################################
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: grafana-edge
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      
+    ports:
+      - "3000:3000"
+      
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      
+    depends_on:
+      - prometheus
+      
+    restart: unless-stopped
+
+################################################################################
+# 数据卷定义
+################################################################################
+volumes:
+  kafka_data:
+    driver: local
+  zookeeper_data:
+    driver: local  
+  zookeeper_logs:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+################################################################################
+# 网络定义 
+################################################################################
+networks:
+  default:
+    name: kangyang-nvidia
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

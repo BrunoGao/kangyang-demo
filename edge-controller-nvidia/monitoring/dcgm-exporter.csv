@@ -1,0 +1,85 @@
+# DCGM Exporter配置 - NVIDIA L4专用GPU指标
+# 针对康养AI检测系统优化的GPU监控指标
+
+# GPU基础信息
+DCGM_FI_DEV_NAME, gauge, GPU名称
+DCGM_FI_DEV_BRAND, gauge, GPU品牌
+DCGM_FI_DEV_SERIAL, gauge, GPU序列号
+DCGM_FI_DEV_UUID, gauge, GPU UUID
+DCGM_FI_DEV_MINOR_NUMBER, gauge, GPU设备号
+
+# GPU利用率指标
+DCGM_FI_DEV_GPU_UTIL, gauge, GPU利用率百分比
+DCGM_FI_DEV_MEM_COPY_UTIL, gauge, 内存拷贝利用率
+DCGM_FI_DEV_ENC_UTIL, gauge, 编码器利用率
+DCGM_FI_DEV_DEC_UTIL, gauge, 解码器利用率(NVDEC)
+
+# 内存相关指标
+DCGM_FI_DEV_FB_TOTAL, gauge, 显存总量(MB)
+DCGM_FI_DEV_FB_USED, gauge, 显存使用量(MB)  
+DCGM_FI_DEV_FB_FREE, gauge, 显存空闲量(MB)
+DCGM_FI_DEV_MEM_COPY_UTIL_SAMPLES, gauge, 内存拷贝采样
+
+# 温度和功耗指标
+DCGM_FI_DEV_GPU_TEMP, gauge, GPU温度(摄氏度)
+DCGM_FI_DEV_POWER_USAGE, gauge, 功耗使用(瓦)
+DCGM_FI_DEV_TOTAL_ENERGY_CONSUMPTION, counter, 总能耗(毫焦)
+
+# 时钟频率指标
+DCGM_FI_DEV_SM_CLOCK, gauge, 流多处理器时钟频率(MHz)
+DCGM_FI_DEV_MEM_CLOCK, gauge, 内存时钟频率(MHz)
+DCGM_FI_DEV_GRAPHICS_CLOCK, gauge, 图形时钟频率(MHz)
+
+# 计算相关指标
+DCGM_FI_DEV_TENSOR_ACTIVE, gauge, Tensor Core活跃度
+DCGM_FI_DEV_FP64_ACTIVE, gauge, FP64活跃度
+DCGM_FI_DEV_FP32_ACTIVE, gauge, FP32活跃度
+DCGM_FI_DEV_FP16_ACTIVE, gauge, FP16活跃度
+
+# PCIe相关指标  
+DCGM_FI_DEV_PCIE_TX_THROUGHPUT, gauge, PCIe发送吞吐量(KB/s)
+DCGM_FI_DEV_PCIE_RX_THROUGHPUT, gauge, PCIe接收吞吐量(KB/s)
+
+# 错误和异常指标
+DCGM_FI_DEV_XID_ERRORS, counter, XID错误计数
+DCGM_FI_DEV_POWER_VIOLATION, counter, 功耗违规计数
+DCGM_FI_DEV_THERMAL_VIOLATION, counter, 温度违规计数
+DCGM_FI_DEV_RELIABILITY_VIOLATION, counter, 可靠性违规计数
+DCGM_FI_DEV_BOARD_LIMIT_VIOLATION, counter, 主板限制违规计数
+DCGM_FI_DEV_LOW_UTIL_VIOLATION, counter, 低利用率违规计数
+DCGM_FI_DEV_SYNC_BOOST_VIOLATION, counter, 同步加速违规计数
+
+# 内存错误指标
+DCGM_FI_DEV_MEMORY_TEMP, gauge, 内存温度
+DCGM_FI_DEV_ECC_SBE_VOL_TOTAL, counter, ECC单比特错误(易失)
+DCGM_FI_DEV_ECC_DBE_VOL_TOTAL, counter, ECC双比特错误(易失)
+DCGM_FI_DEV_ECC_SBE_AGG_TOTAL, counter, ECC单比特错误(聚合)  
+DCGM_FI_DEV_ECC_DBE_AGG_TOTAL, counter, ECC双比特错误(聚合)
+
+# 进程相关指标
+DCGM_FI_DEV_GRAPHICS_PIDS, gauge, 图形进程数
+DCGM_FI_DEV_COMPUTE_PIDS, gauge, 计算进程数
+
+# DeepStream特定指标
+DCGM_FI_DEV_NVDEC_0_UTIL, gauge, NVDEC解码器0利用率
+DCGM_FI_DEV_NVDEC_1_UTIL, gauge, NVDEC解码器1利用率  
+DCGM_FI_DEV_NVDEC_2_UTIL, gauge, NVDEC解码器2利用率
+DCGM_FI_DEV_NVDEC_3_UTIL, gauge, NVDEC解码器3利用率
+DCGM_FI_DEV_NVDEC_4_UTIL, gauge, NVDEC解码器4利用率
+
+# NVJPG JPEG解码器利用率
+DCGM_FI_DEV_NVJPG_0_UTIL, gauge, NVJPG解码器0利用率
+DCGM_FI_DEV_NVJPG_1_UTIL, gauge, NVJPG解码器1利用率
+
+# 光流引擎利用率(用于跟踪)
+DCGM_FI_DEV_NVOF_UTIL, gauge, 光流引擎利用率
+
+# 其他有用指标
+DCGM_FI_DEV_VGPU_LICENSE_STATUS, gauge, vGPU许可状态
+DCGM_FI_DEV_UNCORRECTABLE_REMAPPED_ROWS, counter, 不可纠正的重映射行数
+DCGM_FI_DEV_CORRECTABLE_REMAPPED_ROWS, counter, 可纠正的重映射行数
+DCGM_FI_DEV_ROW_REMAP_FAILURE, gauge, 行重映射失败标志
+
+# 性能状态
+DCGM_FI_DEV_PERF_POLICY_POWER, gauge, 性能策略功耗限制
+DCGM_FI_DEV_PERF_POLICY_THERMAL, gauge, 性能策略温度限制
