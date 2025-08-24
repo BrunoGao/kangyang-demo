@@ -25,7 +25,7 @@
           <input 
             v-model="edgeServiceConfig.url" 
             type="text" 
-            placeholder="http://192.168.1.100:8084"
+            :placeholder="getDefaultEdgeServiceUrl()"
             @blur="checkEdgeServiceConnection"
             class="edge-url-input"
           />
@@ -145,9 +145,14 @@
       </div>
 
       <!-- 视频播放器 -->
-      <div v-if="videoSrc" class="video-section">
+      <div class="video-section">
         <h2>📹 视频播放器</h2>
-        <div class="video-player-wrapper">
+        <div v-if="!videoSrc" class="video-placeholder">
+          <div class="placeholder-icon">🎬</div>
+          <div class="placeholder-text">视频将在这里显示</div>
+          <div class="placeholder-hint">选择测试类型后视频播放器将激活</div>
+        </div>
+        <div v-if="videoSrc" class="video-player-wrapper">
           <video 
             ref="videoPlayer" 
             :src="videoSrc" 
@@ -176,7 +181,7 @@
         </div>
 
         <!-- 视频控制 -->
-        <div class="video-controls">
+        <div v-if="videoSrc" class="video-controls">
           <button @click="playPause" class="btn">{{ isPlaying ? '⏸️' : '▶️' }}</button>
           <button @click="resetVideo" class="btn">⏮️ 重置</button>
           <select v-model="playbackRate" @change="changeSpeed" class="speed-selector">
@@ -299,7 +304,7 @@
             <div class="event-details">
               <span>时间: {{ formatTime(event.timestamp) }}</span>
               <span>位置: {{ event.location }}</span>
-              <span>持续: {{ event.duration }}s</span>
+              <span>事件类型: {{ event.duration }}</span>
             </div>
           </div>
         </div>
@@ -310,6 +315,7 @@
 
 <script>
 import { ref, onMounted, nextTick } from 'vue'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 
 export default {
   name: 'VideoTest',
@@ -325,9 +331,18 @@ export default {
     const duration = ref(0)
     const playbackRate = ref('1')
     
-    // 边缘服务配置
+    // 边缘服务配置 - 自动检测服务器地址
+    const getDefaultEdgeServiceUrl = () => {
+      const hostname = window.location.hostname
+      // 如果是远程访问，使用当前主机的IP
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        return `http://${hostname}:8084`
+      }
+      return 'http://localhost:8084'
+    }
+    
     const edgeServiceConfig = ref({
-      url: 'http://localhost:8084',
+      url: getDefaultEdgeServiceUrl(),
       connected: false,
       lastChecked: null
     })
@@ -393,7 +408,12 @@ export default {
     
     const handleVideoFile = (file) => {
       if (!file.type.startsWith('video/')) {
-        alert('请选择有效的视频文件')
+        ElMessage({
+          message: '请选择有效的视频文件',
+          type: 'warning',
+          duration: 3000,
+          showClose: true
+        })
         return
       }
       
@@ -401,6 +421,13 @@ export default {
       videoSrc.value = URL.createObjectURL(file)
       testResults.value = null
       showDetections.value = false
+      
+      ElMessage({
+        message: `视频文件加载成功: ${file.name}`,
+        type: 'success',
+        duration: 2000,
+        showClose: true
+      })
     }
     
     // 边缘服务连接检查
@@ -409,22 +436,61 @@ export default {
         edgeServiceStatus.value.message = '正在检查连接...'
         edgeServiceStatus.value.connected = false
         
-        const response = await fetch(`${edgeServiceConfig.value.url}/api/health`)
-        const data = await response.json()
+        console.log('正在检查边缘服务连接:', edgeServiceConfig.value.url)
         
-        if (response.ok && data.status === 'healthy') {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
+        
+        const response = await fetch(`${edgeServiceConfig.value.url}/api/health`, {
+          signal: controller.signal,
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        console.log('边缘服务响应:', data)
+        
+        if (data.status === 'healthy') {
           edgeServiceStatus.value.connected = true
-          edgeServiceStatus.value.message = `已连接 (${data.system_stats.controller_name})`
-          edgeServiceStatus.value.controllerId = data.system_stats.controller_id
-          edgeServiceStatus.value.controllerName = data.system_stats.controller_name
+          edgeServiceStatus.value.message = `已连接 (${data.system_stats?.controller_name || 'Edge Controller'})`
+          edgeServiceStatus.value.controllerId = data.system_stats?.controller_id
+          edgeServiceStatus.value.controllerName = data.system_stats?.controller_name
           edgeServiceConfig.value.connected = true
           edgeServiceConfig.value.lastChecked = new Date()
+          
+          ElMessage({
+            message: `🎯 边缘服务连接成功: ${data.system_stats?.controller_name || 'Edge Controller'}`,
+            type: 'success',
+            duration: 3000,
+            showClose: true
+          })
         } else {
-          throw new Error('服务响应异常')
+          throw new Error(`服务状态异常: ${data.status}`)
         }
       } catch (error) {
         edgeServiceStatus.value.connected = false
-        edgeServiceStatus.value.message = '连接失败 - 请检查地址和服务状态'
+        let errorMessage = '连接失败'
+        
+        if (error.name === 'AbortError') {
+          errorMessage = '连接超时 - 请检查网络和服务状态'
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = '无法连接到服务 - 请检查IP地址和端口'
+        } else if (error.message.includes('CORS')) {
+          errorMessage = 'CORS错误 - 跨域访问被阻止'
+        } else {
+          errorMessage = `连接失败: ${error.message}`
+        }
+        
+        edgeServiceStatus.value.message = errorMessage
         edgeServiceConfig.value.connected = false
         console.error('边缘服务连接失败:', error)
       }
@@ -441,7 +507,12 @@ export default {
     
     const loadDefaultVideo = async (filename) => {
       if (!edgeServiceConfig.value.connected) {
-        alert('请先连接到边缘服务')
+        ElMessage({
+          message: '请先连接到边缘服务',
+          type: 'error',
+          duration: 3000,
+          showClose: true
+        })
         return
       }
       
@@ -474,7 +545,12 @@ export default {
         
       } catch (error) {
         console.error('加载默认视频失败:', error)
-        alert(`加载视频失败: ${error.message}`)
+        ElMessage({
+          message: `加载视频失败: ${error.message}`,
+          type: 'error',
+          duration: 4000,
+          showClose: true
+        })
       }
     }
     
@@ -523,12 +599,22 @@ export default {
     // 检测测试
     const startTest = async () => {
       if (!edgeServiceConfig.value.connected) {
-        alert('请先连接到边缘服务')
+        ElMessage({
+          message: '请先连接到边缘服务',
+          type: 'error',
+          duration: 3000,
+          showClose: true
+        })
         return
       }
       
       if (testMode.value === 'video' && !videoSrc.value && !currentFile.value) {
-        alert('请先选择视频文件')
+        ElMessage({
+          message: '请先选择视频文件',
+          type: 'warning',
+          duration: 3000,
+          showClose: true
+        })
         return
       }
       
@@ -542,6 +628,14 @@ export default {
       progressText.value = '初始化检测环境...'
       currentTaskId.value = null
       
+      ElNotification({
+        title: '🚀 开始AI检测',
+        message: '正在分析视频内容，请稍候...',
+        type: 'info',
+        duration: 2000,
+        position: 'top-right'
+      })
+      
       try {
         // 直接调用边缘服务API
         const result = await performAIDetection()
@@ -553,7 +647,12 @@ export default {
         }
       } catch (error) {
         console.error('测试失败:', error)
-        alert('测试失败: ' + error.message)
+        ElMessage({
+          message: `测试失败: ${error.message}`,
+          type: 'error',
+          duration: 4000,
+          showClose: true
+        })
         testing.value = false
         progress.value = 0
         progressText.value = ''
@@ -611,7 +710,7 @@ export default {
             resize_height: 480
           }))
           
-          response = await fetch(`${edgeServiceConfig.value.url}/api/video/process-local`, {
+          response = await fetch(`${edgeServiceConfig.value.url}/api/video/upload`, {
             method: 'POST',
             body: formData
           })
@@ -637,6 +736,8 @@ export default {
         // 如果边缘服务不可用，提供一个更友好的错误信息
         if (error.message.includes('fetch') || error.message.includes('NetworkError')) {
           throw new Error('无法连接到边缘服务，请检查设备状态和网络连接')
+        } else if (error.message.includes('Not Found') || error.message.includes('404')) {
+          throw new Error('视频上传功能暂时不可用，请使用预设测试视频或联系管理员')
         }
         
         throw error
@@ -690,7 +791,7 @@ export default {
             timestamp: detection.timestamp || 0,
             confidence: detection.confidence || 0,
             location: `帧 ${detection.frame_number || 0}`,
-            duration: '1.0',
+            duration: '瞬时',  // 跌倒检测为瞬时事件
             bbox: detection.bbox || [0.2, 0.2, 0.5, 0.6],
             frame_index: detection.frame_number || 0,
             subtype: detection.subtype || detection.type
@@ -708,13 +809,26 @@ export default {
           }
           
           showDetections.value = true
-          alert('AI检测测试完成！')
+          
+          // 使用更美观的通知
+          ElNotification({
+            title: '🎉 AI检测完成！',
+            message: `检测到 ${detections.length} 个事件，置信度 ${(stats.averageConfidence * 100).toFixed(1)}%`,
+            type: 'success',
+            duration: 5000,
+            position: 'top-right'
+          })
         } else {
           throw new Error('获取测试结果失败')
         }
       } catch (error) {
         console.error('获取测试结果失败:', error)
-        alert('获取结果失败: ' + error.message)
+        ElMessage({
+          message: `获取结果失败: ${error.message}`,
+          type: 'error',
+          duration: 4000,
+          showClose: true
+        })
       } finally {
         testing.value = false
         progress.value = 100
@@ -764,7 +878,12 @@ export default {
         
       } catch (error) {
         console.error('摄像头测试失败:', error)
-        alert('摄像头测试失败: ' + error.message)
+        ElMessage({
+          message: `摄像头测试失败: ${error.message}`,
+          type: 'error',
+          duration: 4000,
+          showClose: true
+        })
         testing.value = false
         progress.value = 0
         progressText.value = ''
@@ -903,6 +1022,7 @@ export default {
       showDetections,
       currentDetections,
       currentTaskId,
+      getDefaultEdgeServiceUrl,
       selectFile,
       handleFileSelect,
       handleDrop,
@@ -1114,7 +1234,7 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 30px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .upload-section, .video-section, .config-section {
@@ -1123,6 +1243,10 @@ export default {
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 450px;  /* 设置统一的最小高度 */
+  align-items: stretch;
 }
 
 .upload-area {
@@ -1156,6 +1280,39 @@ export default {
   gap: 15px;
   justify-content: center;
   margin-top: 15px;
+}
+
+.video-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 20px;
+  min-height: 300px;
+  flex: 1;
+}
+
+.placeholder-icon {
+  font-size: 4em;
+  color: #ccc;
+  margin-bottom: 15px;
+}
+
+.placeholder-text {
+  font-size: 1.2em;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.placeholder-hint {
+  color: #999;
+  font-size: 0.9em;
 }
 
 .video-player-wrapper {

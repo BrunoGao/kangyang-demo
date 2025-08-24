@@ -18,6 +18,8 @@ from pathlib import Path
 from .fall_detector import FallDetector
 from .fire_detector import FireDetector  
 from .smoke_detector import SmokeDetector
+from .gpu_optimized_detector import GPUAdaptiveDetectorFactory
+from core.gpu_detector import get_gpu_detector
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +35,60 @@ class VideoProcessor:
         """
         self.config = config or {}
         
-        # 检测器初始化
-        self.fall_detector = FallDetector(self.config.get("fall_detection", {}))
-        self.fire_detector = FireDetector(self.config.get("fire_detection", {}))
-        self.smoke_detector = SmokeDetector(self.config.get("smoke_detection", {}))
+        # GPU检测和优化
+        self.gpu_detector = get_gpu_detector()
+        self.gpu_info = self.gpu_detector.get_gpu_info()
+        self.recommended_settings = self.gpu_detector.get_recommended_settings()
         
-        # 处理参数
-        self.fps_limit = self.config.get("fps_limit", 30)  # 处理帧率限制
-        self.skip_frames = self.config.get("skip_frames", 0)  # 跳帧处理
-        self.resize_width = self.config.get("resize_width", 640)  # 缩放宽度
-        self.resize_height = self.config.get("resize_height", 480)  # 缩放高度
+        logger.info(f"🔥 GPU检测结果: {self.gpu_info['gpu_type']} - {self.gpu_info['gpu_name']}")
+        logger.info(f"🚀 优化后端: {self.gpu_info['optimization_backend']}")
+        
+        # 使用GPU优化的检测器
+        try:
+            self.fall_detector = GPUAdaptiveDetectorFactory.create_fall_detector(
+                self.config.get("fall_detection", {})
+            )
+            logger.info("✅ GPU优化跌倒检测器初始化成功")
+        except Exception as e:
+            logger.warning(f"GPU优化检测器初始化失败，使用传统检测器: {e}")
+            # 回退到传统检测器
+            self.fall_detector = FallDetector(self.config.get("fall_detection", {}))
+        
+        try:
+            self.fire_detector = GPUAdaptiveDetectorFactory.create_fire_detector(
+                self.config.get("fire_detection", {})
+            )
+            logger.info("✅ GPU优化火焰检测器初始化成功")
+        except Exception as e:
+            logger.warning(f"GPU优化火焰检测器初始化失败，使用传统检测器: {e}")
+            self.fire_detector = FireDetector(self.config.get("fire_detection", {}))
+            
+        try:
+            self.smoke_detector = GPUAdaptiveDetectorFactory.create_smoke_detector(
+                self.config.get("smoke_detection", {})
+            )
+            logger.info("✅ GPU优化烟雾检测器初始化成功")
+        except Exception as e:
+            logger.warning(f"GPU优化烟雾检测器初始化失败，使用传统检测器: {e}")
+            self.smoke_detector = SmokeDetector(self.config.get("smoke_detection", {}))
+        
+        # 处理参数 - 使用GPU优化设置
+        self.fps_limit = self.config.get("fps_limit", 30)
+        self.skip_frames = self.config.get("skip_frames", 0)
+        
+        # 使用GPU推荐的输入尺寸
+        recommended_size = self.recommended_settings['input_size']
+        self.resize_width = self.config.get("resize_width", recommended_size[0])
+        self.resize_height = self.config.get("resize_height", recommended_size[1])
+        
+        # GPU优化参数
+        self.batch_size = self.recommended_settings.get('batch_size', 1)
+        self.use_fp16 = self.recommended_settings.get('use_fp16', False)
+        self.num_threads = self.recommended_settings.get('num_threads', 4)
+        
+        logger.info(f"📐 处理尺寸: {self.resize_width}x{self.resize_height}")
+        logger.info(f"⚡ 批处理大小: {self.batch_size}, FP16: {self.use_fp16}")
+        logger.info(f"🧵 线程数: {self.num_threads}")
         
         # 统计信息
         self.stats = {

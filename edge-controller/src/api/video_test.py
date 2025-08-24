@@ -39,6 +39,78 @@ class ProcessingStatus(BaseModel):
     progress: float = 0.0
     message: str = ""
 
+@router.post("/upload")
+async def upload_and_process_video(
+    background_tasks: BackgroundTasks,
+    video_file: UploadFile = File(...),
+    algorithms: str = "",
+    config: str = "{}"
+):
+    """上传并处理视频文件"""
+    try:
+        import json
+        import tempfile
+        import shutil
+        
+        # 验证文件类型
+        if not video_file.content_type or not video_file.content_type.startswith('video/'):
+            raise HTTPException(status_code=400, detail=f"不支持的文件类型: {video_file.content_type}")
+        
+        # 解析参数
+        try:
+            algorithms_list = json.loads(algorithms) if algorithms else ["fall_detection"]
+            config_dict = json.loads(config) if config else {}
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"参数解析错误: {e}")
+        
+        # 生成任务ID和临时文件路径
+        task_id = str(uuid.uuid4())
+        temp_dir = "/tmp/video_uploads"
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # 保存上传的文件
+        file_extension = os.path.splitext(video_file.filename or "video.mp4")[1]
+        temp_file_path = os.path.join(temp_dir, f"{task_id}{file_extension}")
+        
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(video_file.file, buffer)
+        
+        logger.info(f"上传视频文件保存至: {temp_file_path}, 大小: {os.path.getsize(temp_file_path)} bytes")
+        
+        # 初始化任务状态
+        processing_tasks[task_id] = ProcessingStatus(
+            task_id=task_id,
+            status="pending",
+            message="文件上传成功，等待处理"
+        )
+        
+        # 添加后台任务
+        background_tasks.add_task(
+            _process_video_background,
+            task_id,
+            temp_file_path,
+            algorithms_list,
+            config_dict,
+            True  # 标记为上传文件，处理完后删除
+        )
+        
+        return {
+            "success": True,
+            "task_id": task_id,
+            "message": "视频文件上传成功，处理任务已启动",
+            "status_url": f"/api/video/status/{task_id}",
+            "result_url": f"/api/video/result/{task_id}",
+            "file_info": {
+                "filename": video_file.filename,
+                "size": os.path.getsize(temp_file_path),
+                "content_type": video_file.content_type
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"视频文件上传失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/process-local")
 async def process_local_video(request: VideoProcessRequest, background_tasks: BackgroundTasks):
     """处理本地视频文件"""
@@ -244,7 +316,7 @@ async def delete_task(task_id: str):
     }
 
 async def _process_video_background(task_id: str, video_path: str, 
-                                  algorithms: List[str], config: Dict[str, Any]):
+                                  algorithms: List[str], config: Dict[str, Any], cleanup_file: bool = False):
     """后台视频处理任务"""
     try:
         # 更新状态为处理中
@@ -293,3 +365,11 @@ async def _process_video_background(task_id: str, video_path: str,
         logger.error(f"后台处理任务 {task_id} 异常: {e}")
         processing_tasks[task_id].status = "failed"
         processing_tasks[task_id].message = f"处理异常: {str(e)}"
+    finally:
+        # 如果是上传的文件，处理完成后清理
+        if cleanup_file and os.path.exists(video_path):
+            try:
+                os.remove(video_path)
+                logger.info(f"已清理上传的临时文件: {video_path}")
+            except Exception as e:
+                logger.warning(f"清理临时文件失败: {e}")

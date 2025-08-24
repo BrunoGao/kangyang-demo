@@ -1,0 +1,223 @@
+# 康养AI检测系统 - 阿里云容器镜像部署配置
+version: '3.8'
+
+networks:
+  kangyang-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  edge-data:
+    driver: local
+
+services:
+  # MySQL数据库
+  mysql:
+    image: crpi-yilnm6upy4pmbp67.cn-shenzhen.personal.cr.aliyuncs.com/ljwx-ky/ljwx-ky-mysql:1.0.1
+    container_name: kangyang-mysql
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./logs/mysql:/var/log/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-pkangyang123"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis缓存
+  redis:
+    image: redis:7.2-alpine
+    container_name: kangyang-redis
+    restart: unless-stopped
+    command: redis-server --requirepass kangyang_redis_pass --appendonly yes
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.11
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 管理平台后端
+  backend:
+    image: crpi-yilnm6upy4pmbp67.cn-shenzhen.personal.cr.aliyuncs.com/ljwx-ky/ljwx-ky-backend:1.0.1
+    container_name: kangyang-backend
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      - SPRING_PROFILES_ACTIVE=prod
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=kangyang_db
+      - MYSQL_USERNAME=kangyang_user
+      - MYSQL_PASSWORD=kangyang_pass
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=kangyang_redis_pass
+    ports:
+      - "8080:8080"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.20
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 管理平台前端
+  frontend:
+    image: crpi-yilnm6upy4pmbp67.cn-shenzhen.personal.cr.aliyuncs.com/ljwx-ky/ljwx-ky-frontend:1.0.1
+    container_name: kangyang-frontend
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "80:80"
+      - "3000:80"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.21
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 边缘控制器#1 (自主算法版)
+  edge-controller-1:
+    image: crpi-yilnm6upy4pmbp67.cn-shenzhen.personal.cr.aliyuncs.com/ljwx-ky/ljwx-ky-edge-controller:1.0.1
+    container_name: kangyang-edge-1
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      - CONTROLLER_ID=edge_controller_1
+      - CONTROLLER_NAME=边缘控制器#1
+      - MANAGEMENT_API_URL=http://backend:8080/api
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=kangyang_redis_pass
+    volumes:
+      - edge-data:/data/edge-controller
+      - ./logs/edge-1:/app/logs
+      - ./mp4:/app/mp4  # 挂载测试视频目录
+    ports:
+      - "8084:8084"
+      - "9090:9090"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.30
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # 边缘控制器#2 (自主算法版)
+  edge-controller-2:
+    image: crpi-yilnm6upy4pmbp67.cn-shenzhen.personal.cr.aliyuncs.com/ljwx-ky/ljwx-ky-edge-controller:1.0.1
+    container_name: kangyang-edge-2
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      - CONTROLLER_ID=edge_controller_2
+      - CONTROLLER_NAME=边缘控制器#2
+      - MANAGEMENT_API_URL=http://backend:8080/api
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=kangyang_redis_pass
+    volumes:
+      - edge-data:/data/edge-controller
+      - ./logs/edge-2:/app/logs
+      - ./mp4:/app/mp4
+    ports:
+      - "8085:8084"
+      - "9091:9090"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.31
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Prometheus监控
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: kangyang-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus
+    ports:
+      - "9092:9090"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.40
+
+  # Grafana可视化
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: kangyang-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=kangyang_grafana_pass
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3001:3000"
+    networks:
+      kangyang-network:
+        ipv4_address: 172.20.0.41
+    depends_on:
+      - prometheus

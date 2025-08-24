@@ -1,0 +1,8 @@
+# NVIDIA DeepStream版本 Python依赖（简化版）
+# 核心依赖
+kafka-python>=2.0.2
+pyyaml>=6.0
+python-dotenv>=1.0.0
+prometheus-client>=0.17.0
+
+# 注意：pyds, pycuda, tensorrt 等在DeepStream容器中已预安装
