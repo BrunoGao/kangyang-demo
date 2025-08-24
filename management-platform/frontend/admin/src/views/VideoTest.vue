@@ -2,19 +2,73 @@
   <div class="video-test-container">
     <div class="test-header">
       <h1>🎬 康养AI检测专业测试平台</h1>
-      <p>符合国际标准的跌倒/烟雾/火焰检测算法验证系统</p>
+      <p>符合国际标准的跌倒/烟雾/火焰检测算法验证系统 - 直接调用边缘服务</p>
       <div class="certification-badges">
         <span class="cert-badge">📜 ISO 13485认证</span>
         <span class="cert-badge">🏆 IEEE 802.11标准</span>
         <span class="cert-badge">⚡ 实时检测</span>
       </div>
+      
+      <!-- 边缘服务连接状态 -->
+      <div class="edge-service-status" :class="edgeServiceStatus.connected ? 'connected' : 'disconnected'">
+        <div class="status-indicator"></div>
+        <span>边缘服务: {{ edgeServiceStatus.message }}</span>
+      </div>
     </div>
 
     <div class="test-content">
-      <!-- 视频上传区域 -->
+      <!-- 边缘服务配置区域 -->
+      <div class="edge-config-section">
+        <h2>🔧 边缘服务配置</h2>
+        <div class="config-row">
+          <label>边缘服务地址:</label>
+          <input 
+            v-model="edgeServiceConfig.url" 
+            type="text" 
+            placeholder="http://192.168.1.100:8084"
+            @blur="checkEdgeServiceConnection"
+            class="edge-url-input"
+          />
+          <button @click="checkEdgeServiceConnection" class="btn btn-primary btn-small">
+            🔄 测试连接
+          </button>
+        </div>
+      </div>
+
+      <!-- 视频导入和测试选项 -->
       <div class="upload-section">
-        <h2>📁 视频导入</h2>
-        <div class="upload-area" @click="selectFile" @drop="handleDrop" @dragover.prevent @dragenter.prevent>
+        <h2>📁 测试选项</h2>
+        
+        <!-- 测试类型选择 -->
+        <div class="test-type-selection">
+          <h3>选择测试类型:</h3>
+          <div class="test-type-buttons">
+            <button 
+              class="btn btn-primary" 
+              :class="{ active: testMode === 'video' }" 
+              @click="setTestMode('video')"
+            >
+              📹 视频文件测试
+            </button>
+            <button 
+              class="btn btn-success" 
+              :class="{ active: testMode === 'camera' }" 
+              @click="setTestMode('camera')"
+            >
+              📷 真实摄像头测试
+            </button>
+            <button 
+              class="btn btn-warning" 
+              :class="{ active: testMode === 'preset' }" 
+              @click="setTestMode('preset')"
+            >
+              🎬 预设测试视频
+            </button>
+          </div>
+        </div>
+
+        <!-- 视频文件上传区域 -->
+        <div v-if="testMode === 'video'" class="upload-area" @click="selectFile" @drop="handleDrop" @dragover.prevent @dragenter.prevent>
           <div class="upload-icon">📁</div>
           <div class="upload-text">拖拽视频文件到这里或点击选择</div>
           <div class="upload-hint">支持 MP4, AVI, MOV 格式 (最大500MB)</div>
@@ -27,9 +81,55 @@
           />
         </div>
 
-        <!-- 默认测试视频 -->
-        <div class="default-video-section">
-          <div class="section-title">或使用默认测试视频：</div>
+        <!-- 真实摄像头测试 -->
+        <div v-if="testMode === 'camera'" class="camera-test-section">
+          <div class="camera-config">
+            <h3>📷 摄像头配置</h3>
+            <div class="camera-controls">
+              <div class="config-row">
+                <label>摄像头类型:</label>
+                <select v-model="cameraConfig.type" class="config-select">
+                  <option value="rtsp">RTSP网络摄像头</option>
+                  <option value="usb">USB摄像头</option>
+                  <option value="ip">IP摄像头</option>
+                </select>
+              </div>
+              
+              <div v-if="cameraConfig.type === 'rtsp'" class="config-row">
+                <label>RTSP地址:</label>
+                <input 
+                  v-model="cameraConfig.rtspUrl" 
+                  type="text" 
+                  placeholder="rtsp://192.168.1.100/stream"
+                  class="config-input"
+                />
+              </div>
+              
+              <div v-if="cameraConfig.type === 'usb'" class="config-row">
+                <label>设备索引:</label>
+                <select v-model="cameraConfig.deviceIndex" class="config-select">
+                  <option value="0">摄像头 0</option>
+                  <option value="1">摄像头 1</option>
+                  <option value="2">摄像头 2</option>
+                </select>
+              </div>
+              
+              <div class="config-row">
+                <label>测试时长:</label>
+                <select v-model="cameraConfig.duration" class="config-select">
+                  <option value="30">30秒</option>
+                  <option value="60">1分钟</option>
+                  <option value="120">2分钟</option>
+                  <option value="300">5分钟</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 预设测试视频 -->
+        <div v-if="testMode === 'preset'" class="default-video-section">
+          <div class="section-title">选择预设测试视频：</div>
           <div class="default-buttons">
             <button class="btn btn-primary" @click="loadDefaultVideo('falldown.mp4')">
               🤕 跌倒检测测试 (85MB)
@@ -225,6 +325,32 @@ export default {
     const duration = ref(0)
     const playbackRate = ref('1')
     
+    // 边缘服务配置
+    const edgeServiceConfig = ref({
+      url: 'http://localhost:8084',
+      connected: false,
+      lastChecked: null
+    })
+    
+    // 边缘服务状态
+    const edgeServiceStatus = ref({
+      connected: false,
+      message: '正在检查连接...',
+      controllerId: null,
+      controllerName: null
+    })
+    
+    // 测试模式
+    const testMode = ref('preset') // video, camera, preset
+    
+    // 摄像头配置
+    const cameraConfig = ref({
+      type: 'rtsp',
+      rtspUrl: 'rtsp://192.168.1.100/stream',
+      deviceIndex: '0',
+      duration: '60'
+    })
+    
     // 检测配置
     const config = ref({
       fallDetection: true,
@@ -243,6 +369,7 @@ export default {
     const testResults = ref(null)
     const showDetections = ref(false)
     const currentDetections = ref([])
+    const currentTaskId = ref(null)
     
     // 文件选择
     const selectFile = () => {
@@ -276,43 +403,78 @@ export default {
       showDetections.value = false
     }
     
-    const loadDefaultVideo = async (filename) => {
+    // 边缘服务连接检查
+    const checkEdgeServiceConnection = async () => {
       try {
-        // 从服务器加载预设测试视频
-        const response = await fetch(`/api/edge-devices/default-videos/${filename}`)
-        if (response.ok) {
-          const blob = await response.blob()
-          const file = new File([blob], filename, { type: 'video/mp4' })
-          currentFile.value = file
-          videoSrc.value = URL.createObjectURL(blob)
-          testResults.value = null
-          showDetections.value = false
-          
-          // 自动开始检测（对于默认视频）
-          if (filename === 'falldown.mp4') {
-            config.value.fallDetection = true
-            config.value.smokeDetection = false
-            config.value.fireDetection = false
-            setTimeout(() => {
-              startTest()
-            }, 1000)
-          }
+        edgeServiceStatus.value.message = '正在检查连接...'
+        edgeServiceStatus.value.connected = false
+        
+        const response = await fetch(`${edgeServiceConfig.value.url}/api/health`)
+        const data = await response.json()
+        
+        if (response.ok && data.status === 'healthy') {
+          edgeServiceStatus.value.connected = true
+          edgeServiceStatus.value.message = `已连接 (${data.system_stats.controller_name})`
+          edgeServiceStatus.value.controllerId = data.system_stats.controller_id
+          edgeServiceStatus.value.controllerName = data.system_stats.controller_name
+          edgeServiceConfig.value.connected = true
+          edgeServiceConfig.value.lastChecked = new Date()
         } else {
-          // 如果服务器端没有视频，创建一个模拟文件用于演示
-          currentFile.value = { name: filename, size: 85 * 1024 * 1024 } // 85MB
-          videoSrc.value = '/placeholder-video.mp4' // 占位符
-          testResults.value = null
-          showDetections.value = false
-          alert(`演示模式：将使用模拟数据分析 ${filename}`)
+          throw new Error('服务响应异常')
         }
       } catch (error) {
-        console.error('加载默认视频失败:', error)
-        // 创建模拟文件用于演示
-        currentFile.value = { name: filename, size: 85 * 1024 * 1024 }
-        videoSrc.value = null
+        edgeServiceStatus.value.connected = false
+        edgeServiceStatus.value.message = '连接失败 - 请检查地址和服务状态'
+        edgeServiceConfig.value.connected = false
+        console.error('边缘服务连接失败:', error)
+      }
+    }
+    
+    // 设置测试模式
+    const setTestMode = (mode) => {
+      testMode.value = mode
+      testResults.value = null
+      showDetections.value = false
+      videoSrc.value = ''
+      currentFile.value = null
+    }
+    
+    const loadDefaultVideo = async (filename) => {
+      if (!edgeServiceConfig.value.connected) {
+        alert('请先连接到边缘服务')
+        return
+      }
+      
+      try {
+        // 直接使用边缘服务的预设测试功能
+        currentFile.value = { name: filename, size: 85 * 1024 * 1024 } // 85MB
+        videoSrc.value = null // 不需要本地播放，直接进行AI分析
         testResults.value = null
         showDetections.value = false
-        alert(`演示模式：将使用模拟数据分析 ${filename}`)
+        
+        // 根据文件名设置检测类型
+        if (filename === 'falldown.mp4') {
+          config.value.fallDetection = true
+          config.value.smokeDetection = false
+          config.value.fireDetection = false
+        } else if (filename === 'smoke.mp4') {
+          config.value.fallDetection = false
+          config.value.smokeDetection = true
+          config.value.fireDetection = false
+        } else if (filename === 'fire.mp4') {
+          config.value.fallDetection = false
+          config.value.smokeDetection = false
+          config.value.fireDetection = true
+        }
+        
+        // 自动开始测试
+        setTimeout(() => {
+          startTest()
+        }, 1000)
+        
+      } catch (error) {
+        console.error('加载默认视频失败:', error)
+        alert(`加载视频失败: ${error.message}`)
       }
     }
     
@@ -360,32 +522,41 @@ export default {
     
     // 检测测试
     const startTest = async () => {
-      if (!videoSrc.value) {
+      if (!edgeServiceConfig.value.connected) {
+        alert('请先连接到边缘服务')
+        return
+      }
+      
+      if (testMode.value === 'video' && !videoSrc.value && !currentFile.value) {
         alert('请先选择视频文件')
+        return
+      }
+      
+      if (testMode.value === 'camera') {
+        await startCameraTest()
         return
       }
       
       testing.value = true
       progress.value = 0
       progressText.value = '初始化检测环境...'
+      currentTaskId.value = null
       
       try {
-        // 模拟测试过程
-        await simulateTestProgress()
-        
-        // 调用实际的AI检测API
+        // 直接调用边缘服务API
         const result = await performAIDetection()
-        testResults.value = result
-        showDetections.value = true
-        
-        alert('AI检测测试完成！')
+        if (result && result.success) {
+          // 开始轮询测试进度
+          await monitorTestProgress(result.task_id)
+        } else {
+          throw new Error(result?.message || 'AI检测启动失败')
+        }
       } catch (error) {
         console.error('测试失败:', error)
         alert('测试失败: ' + error.message)
-      } finally {
         testing.value = false
-        progress.value = 100
-        progressText.value = '测试完成'
+        progress.value = 0
+        progressText.value = ''
       }
     }
     
@@ -406,10 +577,6 @@ export default {
     }
     
     const performAIDetection = async () => {
-      if (!currentFile.value) {
-        throw new Error('没有选择视频文件')
-      }
-      
       try {
         // 准备要使用的算法列表
         const enabledAlgorithms = []
@@ -421,72 +588,186 @@ export default {
           throw new Error('至少需要启用一种检测算法')
         }
         
-        // 准备FormData
-        const formData = new FormData()
-        formData.append('file', currentFile.value)
-        formData.append('algorithms', enabledAlgorithms.join(','))
+        let response, result
         
-        // 调用管理后端的视频分析代理API
-        const response = await fetch('/api/edge-devices/video-analysis', {
-          method: 'POST',
-          body: formData
-        })
+        if (testMode.value === 'preset') {
+          // 使用预设测试视频（跌倒检测）
+          if (currentFile.value?.name === 'falldown.mp4') {
+            response = await fetch(`${edgeServiceConfig.value.url}/api/video/test-falldown`)
+            result = await response.json()
+          } else {
+            // 其他预设视频的处理逻辑可以在这里添加
+            throw new Error('暂不支持该预设视频的检测')
+          }
+        } else if (testMode.value === 'video' && currentFile.value) {
+          // 上传视频文件进行检测
+          const formData = new FormData()
+          formData.append('video_file', currentFile.value)
+          formData.append('algorithms', JSON.stringify(enabledAlgorithms))
+          formData.append('config', JSON.stringify({
+            confidence_threshold: config.value.fallThreshold,
+            skip_frames: 2,
+            resize_width: 640,
+            resize_height: 480
+          }))
+          
+          response = await fetch(`${edgeServiceConfig.value.url}/api/video/process-local`, {
+            method: 'POST',
+            body: formData
+          })
+          result = await response.json()
+        } else {
+          throw new Error('请选择有效的测试选项')
+        }
         
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: '未知错误' }))
+          const errorData = result || { detail: '未知错误' }
           throw new Error(`边缘服务错误: ${errorData.detail || response.statusText}`)
         }
         
-        const result = await response.json()
-        
         if (!result.success) {
-          throw new Error(`AI分析失败: ${result.message || '未知错误'}`)
+          throw new Error(`AI分析启动失败: ${result.message || '未知错误'}`)
         }
         
-        // 转换边缘服务返回的数据格式为前端需要的格式
-        const analysisData = result.data
-        const events = analysisData.detailed_results.map(detection => ({
-          type: detection.algorithm?.replace('_detection', '') || 'unknown',
-          timestamp: detection.timestamp || 0,
-          confidence: detection.confidence || 0,
-          location: `帧 ${detection.frame_index || 0}`,
-          duration: '1.0',
-          bbox: detection.bbox || [0.2, 0.2, 0.5, 0.6],
-          frame_index: detection.frame_index || 0
-        }))
-        
-        // 计算统计信息
-        const totalDetections = events.length
-        const avgConfidence = totalDetections > 0 
-          ? (events.reduce((sum, e) => sum + e.confidence, 0) / totalDetections * 100).toFixed(1)
-          : '0.0'
-        const maxConfidence = totalDetections > 0 
-          ? Math.max(...events.map(e => e.confidence)) * 100
-          : 0
-        
-        return {
-          totalDetections,
-          averageConfidence: avgConfidence,
-          processingTime: '实时分析',
-          accuracy: (maxConfidence).toFixed(1),
-          events,
-          // 保留原始分析数据
-          rawAnalysis: analysisData,
-          // 视频信息
-          videoInfo: analysisData.video_info,
-          // 算法统计
-          algorithmStats: analysisData.algorithm_statistics
-        }
+        return result
         
       } catch (error) {
         console.error('调用边缘服务AI分析失败:', error)
         
         // 如果边缘服务不可用，提供一个更友好的错误信息
-        if (error.message.includes('fetch')) {
-          throw new Error('无法连接到边缘服务，请检查设备状态')
+        if (error.message.includes('fetch') || error.message.includes('NetworkError')) {
+          throw new Error('无法连接到边缘服务，请检查设备状态和网络连接')
         }
         
         throw error
+      }
+    }
+    
+    // 监控测试进度
+    const monitorTestProgress = async (taskId) => {
+      currentTaskId.value = taskId
+      progressText.value = '测试已启动，正在处理...'
+      
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`${edgeServiceConfig.value.url}/api/video/status/${taskId}`)
+          const data = await response.json()
+          
+          if (data.success) {
+            progress.value = Math.round(data.progress * 100)
+            progressText.value = data.message
+            
+            if (data.status === 'completed') {
+              clearInterval(pollInterval)
+              await getTestResults(taskId)
+            } else if (data.status === 'failed') {
+              clearInterval(pollInterval)
+              throw new Error(data.message)
+            }
+          }
+        } catch (error) {
+          clearInterval(pollInterval)
+          throw error
+        }
+      }, 2000) // 每2秒检查一次
+    }
+    
+    // 获取测试结果
+    const getTestResults = async (taskId) => {
+      try {
+        const response = await fetch(`${edgeServiceConfig.value.url}/api/video/result/${taskId}`)
+        const data = await response.json()
+        
+        if (data.success && data.result) {
+          // 转换边缘服务返回的数据格式为前端需要的格式
+          const result = data.result
+          const detections = result.detections || []
+          const summary = result.detection_summary || {}
+          const stats = result.processing_stats || {}
+          
+          const events = detections.map((detection, index) => ({
+            type: detection.type || 'unknown',
+            timestamp: detection.timestamp || 0,
+            confidence: detection.confidence || 0,
+            location: `帧 ${detection.frame_number || 0}`,
+            duration: '1.0',
+            bbox: detection.bbox || [0.2, 0.2, 0.5, 0.6],
+            frame_index: detection.frame_number || 0,
+            subtype: detection.subtype || detection.type
+          }))
+          
+          testResults.value = {
+            totalDetections: summary.total_detections || 0,
+            averageConfidence: ((Object.values(summary.average_confidence_by_type || {})[0] || 0) * 100).toFixed(1),
+            processingTime: (stats.processing_time_seconds || 0).toFixed(1),
+            accuracy: ((Object.values(summary.max_confidence_by_type || {})[0] || 0) * 100).toFixed(1),
+            events,
+            rawAnalysis: result,
+            processingStats: stats,
+            detectionSummary: summary
+          }
+          
+          showDetections.value = true
+          alert('AI检测测试完成！')
+        } else {
+          throw new Error('获取测试结果失败')
+        }
+      } catch (error) {
+        console.error('获取测试结果失败:', error)
+        alert('获取结果失败: ' + error.message)
+      } finally {
+        testing.value = false
+        progress.value = 100
+        progressText.value = '测试完成'
+      }
+    }
+    
+    // 摄像头测试
+    const startCameraTest = async () => {
+      try {
+        progressText.value = '启动摄像头测试...'
+        
+        // 准备摄像头配置
+        const cameraData = {
+          camera_type: cameraConfig.value.type,
+          duration: parseInt(cameraConfig.value.duration),
+          algorithms: []
+        }
+        
+        if (config.value.fallDetection) cameraData.algorithms.push('fall_detection')
+        if (config.value.smokeDetection) cameraData.algorithms.push('smoke_detection')
+        if (config.value.fireDetection) cameraData.algorithms.push('fire_detection')
+        
+        if (cameraConfig.value.type === 'rtsp') {
+          cameraData.rtsp_url = cameraConfig.value.rtspUrl
+        } else if (cameraConfig.value.type === 'usb') {
+          cameraData.device_index = parseInt(cameraConfig.value.deviceIndex)
+        }
+        
+        // 调用边缘服务的摄像头测试接口
+        const response = await fetch(`${edgeServiceConfig.value.url}/api/cameras/test`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(cameraData)
+        })
+        
+        const result = await response.json()
+        
+        if (result.success) {
+          // 开始监控摄像头测试进度
+          await monitorTestProgress(result.task_id)
+        } else {
+          throw new Error(result.message || '摄像头测试启动失败')
+        }
+        
+      } catch (error) {
+        console.error('摄像头测试失败:', error)
+        alert('摄像头测试失败: ' + error.message)
+        testing.value = false
+        progress.value = 0
+        progressText.value = ''
       }
     }
     
@@ -596,6 +877,11 @@ export default {
       return 'low'
     }
     
+    // 初始化时检查边缘服务连接
+    onMounted(() => {
+      checkEdgeServiceConnection()
+    })
+    
     return {
       fileInput,
       videoPlayer,
@@ -605,6 +891,10 @@ export default {
       currentTime,
       duration,
       playbackRate,
+      edgeServiceConfig,
+      edgeServiceStatus,
+      testMode,
+      cameraConfig,
       config,
       testing,
       progress,
@@ -612,10 +902,14 @@ export default {
       testResults,
       showDetections,
       currentDetections,
+      currentTaskId,
       selectFile,
       handleFileSelect,
       handleDrop,
+      checkEdgeServiceConnection,
+      setTestMode,
       loadDefaultVideo,
+      startCameraTest,
       onVideoLoaded,
       onTimeUpdate,
       playPause,
@@ -676,6 +970,144 @@ export default {
   border: 1px solid #4CAF50;
   font-size: 0.9em;
   color: #2e7d32;
+}
+
+.edge-service-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: 25px;
+  margin-top: 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.edge-service-status.connected {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid #4CAF50;
+  color: #2e7d32;
+}
+
+.edge-service-status.disconnected {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid #f44336;
+  color: #c62828;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.edge-service-status.connected .status-indicator {
+  background-color: #4CAF50;
+}
+
+.edge-service-status.disconnected .status-indicator {
+  background-color: #f44336;
+}
+
+.edge-config-section {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  grid-column: 1 / -1;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.config-row label {
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 120px;
+}
+
+.edge-url-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.edge-url-input:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.test-type-selection {
+  margin-bottom: 25px;
+}
+
+.test-type-selection h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.test-type-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.test-type-buttons .btn.active {
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.camera-test-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.camera-config h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.camera-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.camera-controls .config-row {
+  background: white;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.config-input, .config-select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.config-input:focus, .config-select:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
 }
 
 .test-content {
